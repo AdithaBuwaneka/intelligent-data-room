@@ -1,14 +1,39 @@
 """
 FastAPI Application Entry Point
 
-Main application setup with CORS, routers, and health check.
+Main application setup with CORS, routers, lifecycle events, and health check.
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers import upload, query
+from app.services.database import get_database, close_database
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifecycle manager.
+
+    Handles startup and shutdown events:
+    - Startup: Connect to MongoDB
+    - Shutdown: Close MongoDB connection
+    """
+    # Startup
+    print("🚀 Starting Intelligent Data Room API...")
+    await get_database()
+    print("✅ Application started successfully")
+
+    yield
+
+    # Shutdown
+    print("🛑 Shutting down...")
+    await close_database()
+    print("👋 Goodbye!")
+
 
 # Get settings
 settings = get_settings()
@@ -20,6 +45,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -51,6 +77,12 @@ async def root():
     """Root endpoint with API information."""
     return {
         "message": "Intelligent Data Room API",
+        "description": "AI-powered data analysis with multi-agent system",
         "docs": "/docs",
         "health": "/health",
+        "endpoints": {
+            "upload": "POST /api/upload",
+            "query": "POST /api/query",
+            "history": "GET /api/history/{session_id}",
+        },
     }
