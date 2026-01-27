@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers import upload, query
-from app.services.database import get_database, close_database
 
 
 @asynccontextmanager
@@ -24,14 +23,24 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("🚀 Starting Intelligent Data Room API...")
-    await get_database()
-    print("✅ Application started successfully")
+
+    try:
+        from app.services.database import get_database, close_database
+        await get_database()
+        print("✅ Application started successfully")
+    except Exception as e:
+        print(f"⚠️ Database connection failed: {e}")
+        print("⚠️ App will start but database features may not work")
 
     yield
 
     # Shutdown
     print("🛑 Shutting down...")
-    await close_database()
+    try:
+        from app.services.database import close_database
+        await close_database()
+    except Exception as e:
+        print(f"⚠️ Error during shutdown: {e}")
     print("👋 Goodbye!")
 
 
@@ -41,7 +50,7 @@ settings = get_settings()
 # Create FastAPI app
 app = FastAPI(
     title="Intelligent Data Room API",
-    description="Multi-agent AI system for data analysis using LangGraph and PandasAI",
+    description="Multi-agent AI system for data analysis using LangGraph and Gemini",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
