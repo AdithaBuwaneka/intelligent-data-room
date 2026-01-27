@@ -14,7 +14,7 @@ import type { FileMetadata } from './types';
 
 function App() {
   const { messages, isLoading, sessionId, sendMessage } = useChat();
-  const { file, isUploading, error, setFile, setIsUploading, setError } = useFileUpload();
+  const { file, isUploading, setFile, setIsUploading, setError } = useFileUpload();
   const [showError, setShowError] = useState<string | null>(null);
 
   // Handle file upload completion
