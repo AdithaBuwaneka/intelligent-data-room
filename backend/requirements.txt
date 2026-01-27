@@ -6,7 +6,7 @@ python-multipart>=0.0.9
 # AI and LLM
 langgraph>=0.2.0
 google-generativeai>=0.7.0
-pandasai>=2.0.0
+pandasai==2.2.14
 
 # Data processing
 pandas>=2.0.0

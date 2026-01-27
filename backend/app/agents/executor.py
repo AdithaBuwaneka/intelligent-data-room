@@ -12,8 +12,7 @@ import os
 import time
 from typing import Optional, Any
 from pandasai import Agent
-from pandasai.llm import GoogleGemini
-import google.generativeai as genai
+from pandasai.llm.google_gemini import GoogleGemini
 
 from app.config import get_settings
 
