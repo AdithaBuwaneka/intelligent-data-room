@@ -4,13 +4,15 @@ ImageKit Service
 Handles file uploads to ImageKit.io cloud storage.
 """
 
-import base64
+import asyncio
 from io import BytesIO
-from typing import BinaryIO
+from concurrent.futures import ThreadPoolExecutor
 from imagekitio import ImageKit
-from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
 
 from app.config import get_settings
+
+# Thread pool for running sync ImageKit operations
+_executor = ThreadPoolExecutor(max_workers=3)
 
 
 class ImageKitService:
@@ -26,11 +28,25 @@ class ImageKitService:
     def __init__(self):
         settings = get_settings()
 
+        # New ImageKit SDK API (v5.x)
         self.imagekit = ImageKit(
-            public_key=settings.imagekit_public_key,
             private_key=settings.imagekit_private_key,
-            url_endpoint=settings.imagekit_url_endpoint,
         )
+        self.url_endpoint = settings.imagekit_url_endpoint
+
+    def _upload_sync(self, file_content: bytes, filename: str, folder: str) -> dict:
+        """Synchronous upload to ImageKit."""
+        result = self.imagekit.files.upload(
+            file=BytesIO(file_content),
+            file_name=filename,
+            folder=f"/{folder}",
+        )
+
+        return {
+            "file_id": result.file_id,
+            "file_url": result.url,
+            "name": result.name,
+        }
 
     async def upload_file(
         self,
@@ -50,35 +66,26 @@ class ImageKitService:
             Dictionary with file_id and file_url
         """
         try:
-            # Encode file content to base64
-            file_base64 = base64.b64encode(file_content).decode("utf-8")
-
-            # Upload options
-            options = UploadFileRequestOptions(
-                folder=f"/{folder}",
-                is_private_file=False,
-                use_unique_file_name=True,
+            # Run sync upload in thread pool
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                _executor,
+                self._upload_sync,
+                file_content,
+                filename,
+                folder,
             )
 
-            # Upload to ImageKit
-            result = self.imagekit.upload_file(
-                file=file_base64,
-                file_name=filename,
-                options=options,
-            )
-
-            if result.response_metadata.http_status_code != 200:
-                raise Exception(f"Upload failed: {result.response_metadata.raw}")
-
-            return {
-                "file_id": result.file_id,
-                "file_url": result.url,
-                "name": result.name,
-            }
+            return result
 
         except Exception as e:
             print(f"❌ ImageKit upload error: {e}")
             raise
+
+    def _delete_sync(self, file_id: str) -> bool:
+        """Synchronous delete from ImageKit."""
+        self.imagekit.files.delete(file_id=file_id)
+        return True
 
     async def delete_file(self, file_id: str) -> bool:
         """
@@ -91,8 +98,13 @@ class ImageKitService:
             True if deletion successful
         """
         try:
-            result = self.imagekit.delete_file(file_id)
-            return result.response_metadata.http_status_code == 204
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                _executor,
+                self._delete_sync,
+                file_id,
+            )
+            return True
         except Exception as e:
             print(f"❌ ImageKit delete error: {e}")
             return False
@@ -107,8 +119,7 @@ class ImageKitService:
         Returns:
             Full URL to the file
         """
-        settings = get_settings()
-        return f"{settings.imagekit_url_endpoint}/{file_path}"
+        return f"{self.url_endpoint}/{file_path}"
 
 
 # Global ImageKit service instance

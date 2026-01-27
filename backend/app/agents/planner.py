@@ -76,12 +76,13 @@ class PlannerAgent:
     """
 
     def __init__(self):
-        """Initialize the Planner Agent with Gemini API."""
+        """Initialize the Planner Agent with Google Gemini API."""
         settings = get_settings()
         genai.configure(api_key=settings.gemini_api_key)
 
+        # Use Gemini 2.5 Flash for better reasoning and planning
         self.model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=PLANNER_SYSTEM_PROMPT,
         )
 
@@ -122,7 +123,7 @@ class PlannerAgent:
         full_prompt = "\n".join(prompt_parts)
 
         try:
-            response = self.model.generate_content(full_prompt)
+            response = await self.model.generate_content_async(full_prompt)
             plan = response.text.strip()
             return plan
 

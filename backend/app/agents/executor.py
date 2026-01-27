@@ -1,28 +1,48 @@
 """
 Executor Agent
 
-Executes the planner's plan using PandasAI to analyze data and generate results.
-Uses Google Gemini API through PandasAI for code generation.
+Executes the planner's plan using PandasAI with Google Gemini API.
+Generates Python code, executes it, and returns results with optional charts.
 """
 
 import pandas as pd
+import numpy as np
 import re
-import json
+import os
 from typing import Optional, Any
 from pandasai import SmartDataframe
 from pandasai.llm.google_gemini import GoogleGemini
+import google.generativeai as genai
 
 from app.config import get_settings
+
+
+class GeminiFlash(GoogleGemini):
+    """
+    Custom GoogleGemini LLM that uses gemini-1.5-flash model.
+    Gemini 2.5 has issues with PandasAI - using 1.5 for better compatibility.
+    """
+    model: str = "models/gemini-1.5-flash"
+
+    def _configure(self, api_key: str):
+        """Configure with the correct model."""
+        from pandasai.exceptions import APIKeyNotFoundError
+
+        if not api_key:
+            raise APIKeyNotFoundError("Google Gemini API key is required")
+
+        genai.configure(api_key=api_key)
+        self.google_gemini = genai.GenerativeModel(self.model)
+
 
 
 class ExecutorAgent:
     """
     Agent 2: The Executor
 
-    Responsibilities:
+    Uses PandasAI with Google Gemini API to:
     - Receive execution plan from Planner
-    - Load and process the data
-    - Use PandasAI to execute analysis
+    - Execute data analysis using natural language
     - Generate visualizations when requested
     - Return structured results with chart configuration
     """
@@ -31,7 +51,13 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
+        # Initialize Google Gemini LLM for PandasAI
+        # Using Gemini 1.5 Flash for better PandasAI compatibility
+        self.llm = GeminiFlash(api_key=settings.gemini_api_key)
+        
+        # Chart export directory
+        self.chart_dir = "exports/charts"
+        os.makedirs(self.chart_dir, exist_ok=True)
 
     async def execute_plan(
         self,
@@ -40,7 +66,7 @@ class ExecutorAgent:
         question: str,
     ) -> dict[str, Any]:
         """
-        Execute the plan and return results.
+        Execute the plan using PandasAI and return results.
 
         Args:
             plan: Execution plan from Planner agent
@@ -58,19 +84,34 @@ class ExecutorAgent:
                 df,
                 config={
                     "llm": self.llm,
-                    "verbose": False,
+                    "verbose": True,
                     "enable_cache": False,
-                    "custom_prompts": {
-                        "generate_python_code": self._get_executor_prompt(plan),
-                    },
+                    "save_charts": True,
+                    "save_charts_path": self.chart_dir,
+                    "open_charts": False,
+                    "enforce_privacy": False,
+                    "enable_logging": False,
                 },
             )
 
-            # Execute the query
-            result = smart_df.chat(question)
+            # Create enhanced prompt that forces code generation
+            enhanced_prompt = f"""
+{question}
 
+IMPORTANT: You must write Python code using pandas operations to answer this question.
+Always return a concrete result (number, DataFrame, or value), never just an explanation.
+"""
+
+            # Execute the query using PandasAI
+            print(f"⚡ PandasAI executing: {question[:100]}...")
+            result = smart_df.chat(enhanced_prompt)
+            print(f"✅ PandasAI result type: {type(result)}")
+
+            # Check for chart file
+            chart_path = self._find_generated_chart()
+            
             # Process the result
-            answer = self._format_answer(result, question)
+            answer = self._format_result(result, question, chart_path)
 
             # Determine if chart is needed and generate config
             chart_config = self._generate_chart_config(plan, df, question, result)
@@ -82,45 +123,19 @@ class ExecutorAgent:
 
         except Exception as e:
             print(f"❌ Executor error: {e}")
+            error_msg = str(e)
+            
+            # Better error messages
+            if "No code found" in error_msg:
+                return {
+                    "answer": "I couldn't generate the analysis code. Let me try a different approach.",
+                    "chart_config": self._generate_chart_config_fallback(plan, df, question),
+                }
+            
             return {
-                "answer": f"I encountered an error while analyzing the data: {str(e)}. Please try rephrasing your question.",
+                "answer": f"I encountered an error while analyzing: {error_msg}. Please try rephrasing your question.",
                 "chart_config": None,
             }
-
-    def _get_executor_prompt(self, plan: str) -> str:
-        """Generate custom prompt for PandasAI based on the plan."""
-        return f"""You are a data analysis executor. Follow this plan to answer the question:
-
-{plan}
-
-Generate Python code that:
-1. Follows the steps in the plan exactly
-2. Uses pandas operations efficiently
-3. Returns a clear, formatted result
-4. Handles any edge cases gracefully
-"""
-
-    def _format_answer(self, result: Any, question: str) -> str:
-        """Format the PandasAI result into a readable answer."""
-        if result is None:
-            return "I couldn't find a specific answer to your question. Please try rephrasing it."
-
-        if isinstance(result, pd.DataFrame):
-            if result.empty:
-                return "The query returned no results."
-            # Format DataFrame as a readable string
-            return f"Here are the results:\n\n{result.to_string(index=False)}"
-
-        if isinstance(result, pd.Series):
-            return f"Results:\n{result.to_string()}"
-
-        if isinstance(result, (int, float)):
-            return f"The answer is: {result:,.2f}" if isinstance(result, float) else f"The answer is: {result:,}"
-
-        if isinstance(result, list):
-            return "Results:\n" + "\n".join(f"• {item}" for item in result)
-
-        return str(result)
 
     def _generate_chart_config(
         self,
@@ -183,15 +198,15 @@ Generate Python code that:
         """Determine the appropriate chart type."""
         combined = (plan + " " + question).lower()
 
-        if "pie chart" in combined or "pie" in combined and "distribution" in combined:
+        if "pie chart" in combined or ("pie" in combined and "distribution" in combined):
             return "pie"
-        elif "line chart" in combined or "trend" in combined or "over time" in combined:
+        elif "line chart" in combined or "trend" in combined or "over time" in combined or "over the years" in combined:
             return "line"
         elif "scatter" in combined or "correlation" in combined:
             return "scatter"
         elif "area" in combined:
             return "area"
-        elif "bar" in combined or "compare" in combined or "top" in combined:
+        elif "bar" in combined or "compare" in combined or "top" in combined or "by category" in combined:
             return "bar"
 
         # Default to bar chart for most comparisons
@@ -212,7 +227,7 @@ Generate Python code that:
         if isinstance(result, pd.Series):
             # Convert Series to list of dicts
             return [
-                {"name": str(idx), "value": val}
+                {"name": str(idx), "value": float(val) if pd.notna(val) else 0}
                 for idx, val in result.head(20).items()
             ]
 
@@ -226,8 +241,8 @@ Generate Python code that:
         question: str,
     ) -> list[dict]:
         """Generate chart data by analyzing the DataFrame based on the plan."""
-        # This is a fallback - try to identify columns from the plan
         plan_lower = plan.lower()
+        question_lower = question.lower()
 
         # Find potential grouping column (categorical)
         cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
@@ -240,14 +255,14 @@ Generate Python code that:
         group_col = cat_cols[0]
         value_col = num_cols[0]
 
-        # Try to find better columns from the plan
+        # Try to find better columns from the plan/question
         for col in cat_cols:
-            if col.lower() in plan_lower:
+            if col.lower() in plan_lower or col.lower() in question_lower:
                 group_col = col
                 break
 
         for col in num_cols:
-            if col.lower() in plan_lower:
+            if col.lower() in plan_lower or col.lower() in question_lower:
                 value_col = col
                 break
 
@@ -255,7 +270,8 @@ Generate Python code that:
         try:
             agg_data = df.groupby(group_col)[value_col].sum().head(10).reset_index()
             return agg_data.to_dict(orient="records")
-        except:
+        except Exception as e:
+            print(f"❌ Chart data generation error: {e}")
             return []
 
     def _determine_chart_keys(
@@ -271,11 +287,11 @@ Generate Python code that:
         keys = list(chart_data[0].keys())
 
         # Find string key for x-axis and numeric key for y-axis
-        x_key = "name"
-        y_key = "value"
+        x_key = keys[0] if keys else "name"
+        y_key = keys[1] if len(keys) > 1 else "value"
 
         for key in keys:
-            sample_value = chart_data[0][key]
+            sample_value = chart_data[0].get(key)
             if isinstance(sample_value, str):
                 x_key = key
             elif isinstance(sample_value, (int, float)):
@@ -297,3 +313,91 @@ Generate Python code that:
             title = title[:57] + "..."
 
         return title
+    
+    def _find_generated_chart(self) -> Optional[str]:
+        """Find the most recently generated chart file."""
+        try:
+            chart_files = [
+                os.path.join(self.chart_dir, f)
+                for f in os.listdir(self.chart_dir)
+                if f.endswith('.png')
+            ]
+            
+            if not chart_files:
+                return None
+                
+            # Return most recent file
+            latest_chart = max(chart_files, key=os.path.getmtime)
+            return latest_chart
+            
+        except Exception as e:
+            print(f"❌ Chart search error: {e}")
+            return None
+    
+    def _generate_chart_config_fallback(self, plan: str, df: pd.DataFrame, question: str) -> Optional[dict]:
+        """Generate chart config using direct pandas operations as fallback."""
+        try:
+            chart_type = self._determine_chart_type(plan, question)
+            if not chart_type:
+                return None
+            
+            chart_data = self._generate_chart_data_from_df(df, plan, question)
+            if not chart_data:
+                return None
+            
+            x_key, y_key = self._determine_chart_keys(chart_data, plan, question)
+            title = self._generate_chart_title(question)
+            
+            return {
+                "type": chart_type,
+                "data": chart_data,
+                "xKey": x_key,
+                "yKey": y_key,
+                "title": title,
+            }
+        except Exception as e:
+            print(f"❌ Fallback chart generation error: {e}")
+            return None
+
+    def _format_result(self, result: Any, question: str, chart_path: Optional[str] = None) -> str:
+        """Format the PandasAI result into a readable answer."""
+        # If a chart was generated, return the path
+        if chart_path:
+            return chart_path
+        
+        if result is None:
+            return "I couldn't find a specific answer. Please try rephrasing your question."
+
+        if isinstance(result, pd.DataFrame):
+            if result.empty:
+                return "The query returned no results."
+            # Limit to 20 rows for display
+            if len(result) > 20:
+                return f"Here are the top 20 results:\n\n{result.head(20).to_string(index=False)}\n\n(Showing 20 of {len(result)} rows)"
+            return f"Here are the results:\n\n{result.to_string(index=False)}"
+
+        if isinstance(result, pd.Series):
+            if len(result) > 20:
+                return f"Results (top 20):\n{result.head(20).to_string()}"
+            return f"Results:\n{result.to_string()}"
+
+        if isinstance(result, (np.floating, float)):
+            val = float(result)
+            if abs(val) >= 1000:
+                return f"The answer is: **{val:,.2f}**"
+            return f"The answer is: **{val:.4f}**"
+
+        if isinstance(result, (np.integer, int)):
+            return f"The answer is: **{int(result):,}**"
+
+        if isinstance(result, list):
+            if len(result) > 20:
+                items = result[:20]
+                return "Results (top 20):\n" + "\n".join(f"• {item}" for item in items)
+            return "Results:\n" + "\n".join(f"• {item}" for item in result)
+
+        if isinstance(result, dict):
+            return "Results:\n" + "\n".join(f"• {k}: {v}" for k, v in result.items())
+
+        # For string results from PandasAI
+        return str(result)

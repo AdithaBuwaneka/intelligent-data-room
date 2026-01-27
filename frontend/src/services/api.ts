@@ -1,4 +1,4 @@
-import { FileUploadResponse, QueryRequest, QueryResponse, Message } from '../types';
+import type { FileUploadResponse, QueryRequest, QueryResponse, Message } from '../types';
 
 // API base URL - will be set from environment variable
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -7,9 +7,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
  * Custom error class for API errors
  */
 class ApiError extends Error {
-  constructor(public statusCode: number, message: string) {
+  statusCode: number;
+
+  constructor(statusCode: number, message: string) {
     super(message);
     this.name = 'ApiError';
+    this.statusCode = statusCode;
   }
 }
 
