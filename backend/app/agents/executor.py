@@ -32,10 +32,41 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Google Gemini API."""
         settings = get_settings()
 
-        # Initialize Google Gemini LLM for PandasAI 2.x
-        # Note: PandasAI 2.x GoogleGemini defaults to gemini-pro internally
-        # The fallback mechanism handles model unavailability gracefully
-        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
+        # WORKAROUND: PandasAI 2.2.15 GoogleGemini class hardcodes model in _configure()
+        # before _set_params() runs, so we must monkey-patch the class attribute
+        # Try available Gemini models in order
+        models_to_try = [
+            "gemini-1.5-flash-latest",  # Latest stable flash
+            "gemini-1.5-pro-latest",    # Latest stable pro
+            "gemini-1.5-flash",         # Stable flash
+            "gemini-1.5-pro",           # Stable pro
+        ]
+        
+        self.llm = None
+        last_error = None
+        
+        for model_name in models_to_try:
+            try:
+                # Monkey-patch the default model BEFORE instantiation
+                GoogleGemini.model = model_name
+                
+                self.llm = GoogleGemini(api_key=settings.gemini_api_key)
+                print(f"✅ PandasAI initialized with model: {model_name}")
+                break
+            except Exception as e:
+                last_error = e
+                error_msg = str(e)
+                print(f"⚠️ Model {model_name} failed: {error_msg[:100]}")
+                continue
+        
+        if not self.llm:
+            # All models failed - fallback mechanism will handle execution
+            print(f"⚠️ All Gemini models failed. Using fallback mechanism.")
+            print(f"   Last error: {str(last_error)[:200]}")
+            # Still create an LLM instance with deprecated model for structure
+            # The fallback will handle actual execution
+            GoogleGemini.model = "models/gemini-pro"
+            self.llm = GoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
