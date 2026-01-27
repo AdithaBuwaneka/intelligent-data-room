@@ -12,6 +12,7 @@ import os
 import time
 from typing import Optional, Any
 from pandasai import Agent
+from pandasai.llm import GoogleGemini
 import google.generativeai as genai
 
 from app.config import get_settings
@@ -32,8 +33,8 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        # Configure Google Gemini
-        genai.configure(api_key=settings.gemini_api_key)
+        # Initialize Google Gemini LLM for PandasAI
+        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
@@ -62,14 +63,11 @@ class ExecutorAgent:
         start_time = time.time()
 
         try:
-            # Create PandasAI Agent with Gemini
+            # Create PandasAI Agent with Gemini LLM
             agent = Agent(
                 df,
                 config={
-                    "llm": {
-                        "model": "gemini-2.0-flash-exp",
-                        "api_key": get_settings().gemini_api_key
-                    },
+                    "llm": self.llm,
                     "verbose": True,
                     "enable_cache": False,
                     "save_charts": True,
