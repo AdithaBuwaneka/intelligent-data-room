@@ -12,8 +12,7 @@ import os
 import time
 from typing import Optional, Any
 from pandasai import Agent
-from pandasai.llm.bamboo_llm import BambooLLM
-import google.generativeai as genai
+from pandasai.llm import GoogleGemini
 
 from app.config import get_settings
 
@@ -30,11 +29,11 @@ class ExecutorAgent:
     """
 
     def __init__(self):
-        """Initialize the Executor Agent with PandasAI and Gemini."""
+        """Initialize the Executor Agent with PandasAI and Google Gemini API."""
         settings = get_settings()
 
-        # Initialize BambooLLM with Gemini API key for PandasAI 3.x
-        self.llm = BambooLLM(api_key=settings.gemini_api_key)
+        # Initialize Google Gemini LLM for PandasAI 3.x
+        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
