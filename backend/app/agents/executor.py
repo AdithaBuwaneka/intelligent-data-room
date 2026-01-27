@@ -12,7 +12,7 @@ import os
 import time
 from typing import Optional, Any
 from pandasai import Agent
-from pandasai.llm import GoogleGemini
+from pandasai.llm.google_gemini import GoogleGemini
 
 from app.config import get_settings
 
@@ -32,7 +32,9 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Google Gemini API."""
         settings = get_settings()
 
-        # Initialize Google Gemini LLM for PandasAI 3.x
+        # Initialize Google Gemini LLM for PandasAI 2.x
+        # Note: PandasAI 2.x GoogleGemini defaults to gemini-pro internally
+        # The fallback mechanism handles model unavailability gracefully
         self.llm = GoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
