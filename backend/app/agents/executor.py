@@ -309,15 +309,51 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
             return None
 
     def _needs_visualization(self, plan: str, question: str) -> bool:
-        """Determine if visualization is needed."""
+        """
+        Determine if visualization is needed by checking the plan.
+        
+        Respects the planner's VISUALIZATION decision which already considered:
+        - User's explicit preferences ("don't chart", "without visualization")
+        - Question intent and context
+        - Whether visualization would add value
+        """
+        # First priority: Check what the planner decided
+        plan_lower = plan.lower()
+        
+        # Look for explicit VISUALIZATION directive in the plan
+        if "visualization:" in plan_lower or "visualization::" in plan_lower:
+            # Extract the visualization decision
+            if "visualization: no" in plan_lower or "visualization:: no" in plan_lower or "visualization:no" in plan_lower:
+                print("📊 Planner said VISUALIZATION: NO - respecting decision")
+                return False
+            elif "visualization: yes" in plan_lower or "visualization:: yes" in plan_lower or "visualization:yes" in plan_lower:
+                print("📊 Planner said VISUALIZATION: YES - will generate chart")
+                return True
+        
+        # Fallback: If no explicit directive in plan, infer from keywords
+        # This handles older plans or edge cases
         viz_keywords = [
             "chart", "graph", "plot", "visualize", "visualization",
             "show", "display", "trend", "compare", "comparison",
             "distribution", "pie", "bar", "line", "scatter"
         ]
-
+        
+        # Check if user explicitly said NO to visualization
+        no_viz_keywords = ["don't chart", "no chart", "without chart", "no visualization", 
+                          "without visualization", "no graph", "table only", "just calculate"]
+        
         combined = (plan + " " + question).lower()
-        return any(keyword in combined for keyword in viz_keywords)
+        
+        # If user explicitly said no, respect it
+        if any(no_kw in combined for no_kw in no_viz_keywords):
+            print("📊 User explicitly requested no visualization")
+            return False
+        
+        # Otherwise check for visualization keywords
+        has_viz_keywords = any(keyword in combined for keyword in viz_keywords)
+        if has_viz_keywords:
+            print("📊 Visualization keywords found, will generate chart")
+        return has_viz_keywords
 
     def _determine_chart_type(self, plan: str, question: str) -> Optional[str]:
         """Determine the appropriate chart type."""
