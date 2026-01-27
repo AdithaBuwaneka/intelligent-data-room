@@ -220,12 +220,25 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
             if isinstance(result, str) and (
                 "unfortunately" in result.lower() or
                 "no code found" in result.lower() or
+                "cannot" in result.lower() or
+                "missing" in result.lower() or
                 ("error" in result.lower() and len(result) < 200)  # Only treat short error messages as errors
             ):
-                print(f"⚠️ PandasAI returned error string, using fallback")
+                print(f"⚠️ PandasAI returned error/limitation message, using fallback")
                 # Respect visualization preference even in fallback
                 needs_viz = self._needs_visualization(plan, question)
-                fallback_config = self._generate_chart_config_fallback(plan, df, question) if needs_viz else None
+                
+                # IMPORTANT: If the analysis failed/can't be done, don't generate chart
+                # Check if it's a "cannot calculate" or "missing data" type error
+                is_failure = any(word in result.lower() for word in 
+                               ["cannot", "missing", "not possible", "not available", "no column"])
+                
+                if is_failure:
+                    print("❌ Analysis cannot be completed - skipping chart generation")
+                    fallback_config = None
+                else:
+                    fallback_config = self._generate_chart_config_fallback(plan, df, question) if needs_viz else None
+                
                 fallback_answer = self._generate_fallback_answer(plan, df, question, fallback_config)
                 return {
                     "answer": fallback_answer,
