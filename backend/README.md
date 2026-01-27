@@ -4,8 +4,9 @@ emoji: 📊
 colorFrom: blue
 colorTo: indigo
 sdk: docker
-app_file: app/main.py
+python_version: "3.11"
 pinned: false
+license: mit
 ---
 
 # Intelligent Data Room API

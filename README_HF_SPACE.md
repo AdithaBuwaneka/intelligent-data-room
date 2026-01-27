@@ -4,6 +4,7 @@ emoji: 📊
 colorFrom: blue
 colorTo: purple
 sdk: docker
+python_version: "3.11"
 pinned: false
 license: mit
 ---
