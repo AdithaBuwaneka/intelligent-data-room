@@ -5,7 +5,7 @@
  * Users can upload CSV/XLSX files and chat with their data.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { ChatInterface } from './components/ChatInterface';
 import { useChat } from './hooks/useChat';
@@ -13,9 +13,21 @@ import { useFileUpload } from './hooks/useFileUpload';
 import type { FileMetadata } from './types';
 
 function App() {
-  const { messages, isLoading, sessionId, sendMessage } = useChat();
-  const { file, isUploading, setFile, setIsUploading, setError } = useFileUpload();
+  const { messages, isLoading, sessionId, sendMessage, startNewChat } = useChat();
+  const { file, isUploading, isRestoring, setFile, setIsUploading, setError, restoreFile, clearFile } = useFileUpload();
   const [showError, setShowError] = useState<string | null>(null);
+
+  // Restore file on mount (in case of browser refresh)
+  useEffect(() => {
+    restoreFile(sessionId);
+  }, [sessionId, restoreFile]);
+
+  // Handle starting a new chat
+  const handleNewChat = () => {
+    startNewChat();
+    clearFile();
+    setShowError(null);
+  };
 
   // Handle file upload completion
   const handleFileUploaded = (metadata: FileMetadata) => {
@@ -64,6 +76,26 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={handleNewChat}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Start a new chat session"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                New Chat
+              </button>
               <span className="text-xs text-gray-400">
                 Session: {sessionId.slice(0, 8)}...
               </span>

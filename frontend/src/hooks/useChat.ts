@@ -3,9 +3,10 @@
  *
  * Manages chat state, session, and message operations.
  * Handles communication with the backend API.
+ * Supports chat history restoration and new chat creation.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Message, QueryResponse } from '../types';
 
 const SESSION_KEY = 'idr_session_id';
@@ -13,11 +14,14 @@ const SESSION_KEY = 'idr_session_id';
 interface UseChatReturn {
   messages: Message[];
   isLoading: boolean;
+  isRestoring: boolean;
   error: string | null;
   sessionId: string;
   sendMessage: (content: string, fileUrl: string) => Promise<QueryResponse>;
   clearMessages: () => void;
   clearError: () => void;
+  startNewChat: () => void;
+  restoreHistory: () => Promise<void>;
 }
 
 /**
@@ -32,11 +36,63 @@ function getOrCreateSessionId(): string {
   return newId;
 }
 
+/**
+ * Create a brand new session ID
+ */
+function createNewSessionId(): string {
+  const newId = crypto.randomUUID();
+  localStorage.setItem(SESSION_KEY, newId);
+  return newId;
+}
+
 export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionId] = useState<string>(getOrCreateSessionId);
+  const [sessionId, setSessionId] = useState<string>(getOrCreateSessionId);
+
+  /**
+   * Restore chat history from backend
+   */
+  const restoreHistory = useCallback(async () => {
+    setIsRestoring(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/api/history/${sessionId}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && data.messages.length > 0) {
+          const restoredMessages: Message[] = data.messages.map((msg: {
+            id: string;
+            role: 'user' | 'assistant';
+            content: string;
+            timestamp: string;
+            plan?: string;
+            chart_config?: unknown;
+          }) => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            plan: msg.plan,
+            chartConfig: msg.chart_config,
+          }));
+          setMessages(restoredMessages);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to restore chat history:', err);
+    } finally {
+      setIsRestoring(false);
+    }
+  }, [sessionId]);
+
+  // Restore history on mount
+  useEffect(() => {
+    restoreHistory();
+  }, [restoreHistory]);
 
   /**
    * Send a message and get AI response
@@ -113,11 +169,24 @@ export function useChat(): UseChatReturn {
   );
 
   /**
-   * Clear all messages
+   * Clear all messages (keep same session)
    */
   const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
+  }, []);
+
+  /**
+   * Start a completely new chat session
+   * Clears messages and creates a new session ID
+   */
+  const startNewChat = useCallback(() => {
+    setMessages([]);
+    setError(null);
+    const newId = createNewSessionId();
+    setSessionId(newId);
+    // Clear file from localStorage too
+    localStorage.removeItem('idr_uploaded_file');
   }, []);
 
   /**
@@ -130,11 +199,14 @@ export function useChat(): UseChatReturn {
   return {
     messages,
     isLoading,
+    isRestoring,
     error,
     sessionId,
     sendMessage,
     clearMessages,
     clearError,
+    startNewChat,
+    restoreHistory,
   };
 }
 

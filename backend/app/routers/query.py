@@ -2,6 +2,7 @@
 Query Router
 
 Handles chat queries using the multi-agent system (Planner + Executor).
+Includes intelligent query classification to handle greetings and casual chat.
 """
 
 import time
@@ -14,6 +15,7 @@ from app.models.schemas import QueryRequest, QueryResponse, ChatMessage
 from app.services.database import get_database
 from app.services.memory import get_memory_service
 from app.graph.workflow import AgentWorkflow
+from app.agents.classifier import get_classifier
 
 router = APIRouter()
 
@@ -70,9 +72,9 @@ async def process_query(request: QueryRequest):
 
     Multi-Agent Workflow:
     1. Load last 5 messages for context
-    2. Load the data file from URL
-    3. Planner Agent: Analyzes question + schema → Creates execution plan
-    4. Executor Agent: Uses PandasAI to execute plan → Returns results
+    2. Classify query (data question vs greeting/chitchat)
+    3. If greeting/chitchat: Return friendly response
+    4. If data question: Load data and run Planner + Executor workflow
     5. Store conversation in MongoDB
 
     Returns:
@@ -82,32 +84,69 @@ async def process_query(request: QueryRequest):
 
     # Get services
     memory = await get_memory_service()
-    workflow = get_workflow()
+    classifier = get_classifier()
 
     try:
         # Step 1: Get conversation context
         context = await memory.get_context_for_agent(request.session_id)
         print(f"📚 Context loaded: {len(context)} chars")
 
-        # Step 2: Load DataFrame from file URL
+        # Step 2: Classify the query (with context for follow-up detection)
+        query_type = await classifier.classify(request.question, context)
+        print(f"🏷️ Query classified as: {query_type}")
+
+        # Step 3: Handle non-data queries (greetings, chitchat)
+        if query_type in ["GREETING", "CHITCHAT"]:
+            friendly_response = classifier.get_friendly_response(query_type, request.question)
+
+            # Save user message
+            await memory.save_message(
+                session_id=request.session_id,
+                role="user",
+                content=request.question,
+            )
+
+            # Save assistant response
+            await memory.save_message(
+                session_id=request.session_id,
+                role="assistant",
+                content=friendly_response,
+                plan=None,
+                chart_config=None,
+            )
+
+            execution_time = time.time() - start_time
+            print(f"⏱️ Friendly response time: {execution_time:.2f}s")
+
+            return QueryResponse(
+                answer=friendly_response,
+                plan=None,
+                chart_config=None,
+                execution_time=execution_time,
+            )
+
+        # Step 4: For DATA_QUESTION or UNCLEAR - run full workflow
+        workflow = get_workflow()
+
+        # Load DataFrame from file URL
         df = await load_dataframe_from_url(request.file_url)
         print(f"📊 Data loaded: {len(df)} rows, {len(df.columns)} columns")
 
-        # Step 3: Save user message
+        # Save user message
         await memory.save_message(
             session_id=request.session_id,
             role="user",
             content=request.question,
         )
 
-        # Step 4: Run multi-agent workflow
+        # Run multi-agent workflow
         result = await workflow.run(
             question=request.question,
             dataframe=df,
             context=context,
         )
 
-        # Step 5: Save assistant message
+        # Save assistant message
         await memory.save_message(
             session_id=request.session_id,
             role="assistant",

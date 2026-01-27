@@ -190,6 +190,40 @@ async def get_file_metadata(file_id: str):
     }
 
 
+@router.get("/session/{session_id}/file")
+async def get_session_file(session_id: str):
+    """
+    Get the most recent file uploaded for a session.
+
+    This is used to restore file state after browser refresh.
+
+    Args:
+        session_id: Session identifier
+
+    Returns:
+        File metadata if exists, or 404 if no file for session
+    """
+    db = await get_database()
+
+    # Find the most recent file for this session
+    file_doc = await db.files_collection.find_one(
+        {"session_id": session_id},
+        sort=[("uploaded_at", -1)]  # Most recent first
+    )
+
+    if not file_doc:
+        raise HTTPException(status_code=404, detail="No file found for this session")
+
+    return {
+        "file_id": file_doc["file_id"],
+        "filename": file_doc["filename"],
+        "file_url": file_doc["file_url"],
+        "columns": file_doc["columns"],
+        "row_count": file_doc["row_count"],
+        "uploaded_at": file_doc["uploaded_at"].isoformat(),
+    }
+
+
 @router.delete("/file/{file_id}")
 async def delete_file(file_id: str):
     """
