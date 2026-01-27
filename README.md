@@ -1,3 +1,13 @@
+---
+title: Intelligent Data Room
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_file: app/main.py
+pinned: false
+---
+
 # Intelligent Data Room
 
 [![Backend Status](https://img.shields.io/badge/Backend-Running-brightgreen)](https://adithaf7-intelligent-data-room.hf.space)
@@ -19,7 +29,6 @@ AI-powered data analysis platform with a multi-agent system. Upload CSV/XLSX fil
 - **Natural Language Queries** - Ask questions about your data in plain English
 - **Auto Visualizations** - Charts generated automatically for trends/comparisons
 - **Context Retention** - Remembers conversation history for follow-up questions
-- **Session Persistence** - Chat history saved across browser refreshes
 
 ## 🛠️ Tech Stack
 
@@ -29,25 +38,15 @@ AI-powered data analysis platform with a multi-agent system. Upload CSV/XLSX fil
 | Agent Framework | LangGraph |
 | Data Analysis | PandasAI |
 | Backend | FastAPI (Python) |
-| Frontend | React + TypeScript + Vite |
+| Frontend | React + TypeScript |
 | Database | MongoDB Atlas |
-| File Storage | ImageKit |
 
-## 📁 Project Structure
-
-```
-├── backend/          # FastAPI + LangGraph + PandasAI
-├── frontend/         # React + TypeScript + Tailwind
-└── README.md
-```
-
-## 🚀 Quick Start
+##  Quick Start
 
 ### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-cp .env.example .env  # Add your API keys
 uvicorn app.main:app --reload
 ```
 
@@ -55,24 +54,14 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend
 npm install
-cp .env.example .env  # Set API URL
 npm run dev
 ```
 
 ## 📝 Sample Queries
 
 - "Show total sales by category"
-- "Which region has highest profit?"
 - "Create a pie chart of sales by region"
 - "How has profit changed over the years?"
-
-## 🏗️ Architecture
-
-```
-User Question → Planner Agent → Execution Plan → Executor Agent → Answer + Chart
-                    ↓                                    ↓
-              Google Gemini                        PandasAI + Gemini
-```
 
 ## 📄 License
 
