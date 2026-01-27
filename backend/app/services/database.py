@@ -4,7 +4,6 @@ MongoDB Database Service
 Handles connection to MongoDB Atlas and provides database operations.
 """
 
-from functools import lru_cache
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ConnectionFailure
 
@@ -69,21 +68,21 @@ class Database:
     @property
     def files_collection(self):
         """Get the files collection."""
-        if not self.db:
+        if self.db is None:
             raise RuntimeError("Database not connected")
         return self.db["files"]
 
     @property
     def messages_collection(self):
         """Get the messages collection."""
-        if not self.db:
+        if self.db is None:
             raise RuntimeError("Database not connected")
         return self.db["messages"]
 
     @property
     def sessions_collection(self):
         """Get the sessions collection."""
-        if not self.db:
+        if self.db is None:
             raise RuntimeError("Database not connected")
         return self.db["sessions"]
 
@@ -91,23 +90,26 @@ class Database:
         """
         Create database indexes for optimized queries.
         """
-        if not self.db:
+        if self.db is None:
             raise RuntimeError("Database not connected")
 
-        # Files collection indexes
-        await self.files_collection.create_index("file_id", unique=True)
-        await self.files_collection.create_index("session_id")
+        try:
+            # Files collection indexes
+            await self.files_collection.create_index("file_id", unique=True)
+            await self.files_collection.create_index("session_id")
 
-        # Messages collection indexes
-        await self.messages_collection.create_index("session_id")
-        await self.messages_collection.create_index(
-            [("session_id", 1), ("timestamp", -1)]
-        )
+            # Messages collection indexes
+            await self.messages_collection.create_index("session_id")
+            await self.messages_collection.create_index(
+                [("session_id", 1), ("timestamp", -1)]
+            )
 
-        # Sessions collection indexes
-        await self.sessions_collection.create_index("session_id", unique=True)
+            # Sessions collection indexes
+            await self.sessions_collection.create_index("session_id", unique=True)
 
-        print("✅ Database indexes created")
+            print("✅ Database indexes created")
+        except Exception as e:
+            print(f"⚠️ Index creation warning: {e}")
 
 
 # Global database instance
@@ -126,7 +128,10 @@ async def get_database() -> Database:
     if _database is None:
         _database = Database()
         await _database.connect()
-        await _database.create_indexes()
+        try:
+            await _database.create_indexes()
+        except Exception as e:
+            print(f"⚠️ Index creation skipped: {e}")
 
     return _database
 
