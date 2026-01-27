@@ -223,7 +223,9 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
                 ("error" in result.lower() and len(result) < 200)  # Only treat short error messages as errors
             ):
                 print(f"⚠️ PandasAI returned error string, using fallback")
-                fallback_config = self._generate_chart_config_fallback(plan, df, question)
+                # Respect visualization preference even in fallback
+                needs_viz = self._needs_visualization(plan, question)
+                fallback_config = self._generate_chart_config_fallback(plan, df, question) if needs_viz else None
                 fallback_answer = self._generate_fallback_answer(plan, df, question, fallback_config)
                 return {
                     "answer": fallback_answer,
@@ -250,7 +252,9 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
 
             # Better error messages with fallback chart generation
             if "No code found" in error_msg:
-                fallback_config = self._generate_chart_config_fallback(plan, df, question)
+                # Respect visualization preference even in fallback
+                needs_viz = self._needs_visualization(plan, question)
+                fallback_config = self._generate_chart_config_fallback(plan, df, question) if needs_viz else None
                 fallback_answer = self._generate_fallback_answer(plan, df, question, fallback_config)
                 return {
                     "answer": fallback_answer,
