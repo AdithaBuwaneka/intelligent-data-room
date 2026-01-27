@@ -24,16 +24,20 @@ class GeminiFlash(GoogleGemini):
     """
     model: str = "models/gemini-1.5-flash"
 
-    def _configure(self, api_key: str):
+    def __init__(self, api_key: str):
+        """Initialize with Gemini API key."""
+        self.api_key = api_key
+        self._configure()
+    
+    def _configure(self):
         """Configure with the correct model."""
         from pandasai.exceptions import APIKeyNotFoundError
 
-        if not api_key:
+        if not self.api_key:
             raise APIKeyNotFoundError("Google Gemini API key is required")
 
-        genai.configure(api_key=api_key)
+        genai.configure(api_key=self.api_key)
         self.google_gemini = genai.GenerativeModel(self.model)
-
 
 
 class ExecutorAgent:
