@@ -202,8 +202,6 @@ User Question: {question}
 
 IMPORTANT: You must write Python code using pandas operations to answer this question.
 Always return a concrete result (number, DataFrame, or value), never just an explanation.
-
-Note: Use matplotlib.pyplot for charts. Do not use os, io, or subprocess modules.
 """
 
             # Execute the query using PandasAI
