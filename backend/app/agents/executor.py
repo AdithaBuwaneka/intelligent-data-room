@@ -11,33 +11,10 @@ import re
 import os
 import time
 from typing import Optional, Any
-from pandasai import SmartDataframe
-from pandasai.llm.google_gemini import GoogleGemini
+from pandasai import Agent
 import google.generativeai as genai
 
 from app.config import get_settings
-
-
-class GeminiFlash(GoogleGemini):
-    """
-    Custom GoogleGemini LLM that uses gemini-2.0-flash model for PandasAI.
-    """
-    model: str = "gemini-2.0-flash"
-
-    def __init__(self, api_key: str):
-        """Initialize with Gemini API key."""
-        self.api_key = api_key
-        self._configure()
-    
-    def _configure(self):
-        """Configure with the correct model."""
-        from pandasai.exceptions import APIKeyNotFoundError
-
-        if not self.api_key:
-            raise APIKeyNotFoundError("Google Gemini API key is required")
-
-        genai.configure(api_key=self.api_key)
-        self.google_gemini = genai.GenerativeModel(self.model)
 
 
 class ExecutorAgent:
@@ -55,9 +32,8 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        # Initialize Google Gemini LLM for PandasAI
-        # Using Gemini 1.5 Flash for better PandasAI compatibility
-        self.llm = GeminiFlash(api_key=settings.gemini_api_key)
+        # Configure Google Gemini
+        genai.configure(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
@@ -86,18 +62,19 @@ class ExecutorAgent:
         start_time = time.time()
 
         try:
-            # Create SmartDataframe with PandasAI
-            smart_df = SmartDataframe(
+            # Create PandasAI Agent with Gemini
+            agent = Agent(
                 df,
                 config={
-                    "llm": self.llm,
+                    "llm": {
+                        "model": "gemini-2.0-flash-exp",
+                        "api_key": get_settings().gemini_api_key
+                    },
                     "verbose": True,
                     "enable_cache": False,
                     "save_charts": True,
                     "save_charts_path": self.chart_dir,
                     "open_charts": False,
-                    "enforce_privacy": False,
-                    "enable_logging": False,
                 },
             )
 
@@ -114,7 +91,7 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
 
             # Execute the query using PandasAI
             print(f"⚡ PandasAI executing: {question[:100]}...")
-            result = smart_df.chat(enhanced_prompt)
+            result = agent.chat(enhanced_prompt)
             print(f"✅ PandasAI result type: {type(result)}")
 
             # Check if PandasAI returned an error string (it catches exceptions internally)
