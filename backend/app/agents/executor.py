@@ -18,14 +18,14 @@ import google.generativeai as genai
 from app.config import get_settings
 
 
-# Patch GoogleGemini to use gemini-1.5-flash instead of gemini-pro
+# Patch GoogleGemini to use available model in v1beta API
 class PatchedGoogleGemini(GoogleGemini):
-    """GoogleGemini LLM patched to use gemini-1.5-flash-latest."""
+    """GoogleGemini LLM patched to use models/gemini-1.0-pro."""
     
     def __init__(self, api_key: str):
         super().__init__(api_key=api_key)
-        # Override the model to use gemini-1.5-flash-latest with full path
-        self.google_gemini = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+        # Override the model to use gemini-1.0-pro (available in v1beta)
+        self.google_gemini = genai.GenerativeModel("models/gemini-1.0-pro")
 
 
 class ExecutorAgent:
