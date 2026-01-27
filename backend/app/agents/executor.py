@@ -196,7 +196,10 @@ Based on the following analysis plan:
 
 User Question: {question}
 
-IMPORTANT: You must write Python code using pandas operations to answer this question.
+IMPORTANT RULES:
+1. You must write Python code using pandas operations to answer this question.
+2. DO NOT use 'os', 'io', 'chr', or 'b64decode' modules - they are blocked for security.
+3. For saving charts, just use plt.savefig("temp_chart.png") directly without os.makedirs().
 Always return a concrete result (number, DataFrame, or value), never just an explanation.
 """
 
