@@ -16,6 +16,7 @@ interface FileUploadProps {
   onUploadStart: () => void;
   onUploadEnd: () => void;
   onError: (error: string) => void;
+  initialFile?: FileMetadata | null;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -28,9 +29,10 @@ export function FileUpload({
   onUploadStart,
   onUploadEnd,
   onError,
+  initialFile = null,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<FileMetadata | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<FileMetadata | null>(initialFile);
 
   const validateFile = (file: File): string | null => {
     // Check file extension
