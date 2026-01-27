@@ -98,35 +98,13 @@ async def process_query(request: QueryRequest):
         context = await memory.get_context_for_agent(request.session_id)
         print(f"📚 Context loaded: {len(context)} chars")
 
-        # Step 1.5: Quick pre-check for obvious greetings/chitchat (optimization + safety)
-        question_lower = request.question.lower().strip()
-        
-        # If no data analysis in context and message is very short greeting
+        # Step 2: Intelligently classify the query using AI
+        # Let the AI handle ALL messages - greetings, chitchat, data questions, follow-ups
         has_data_context = "[executed data analysis]" in context or "[created chart]" in context
-        
         print(f"🔍 Question: '{request.question}' | Has data context: {has_data_context}")
         
-        if not has_data_context:
-            # Common greetings - bypass AI classifier for speed
-            if question_lower in ["hi", "hello", "hey", "hii", "hiii", "heya", "yo", "sup", 
-                                 "good morning", "good afternoon", "good evening", "morning", "evening",
-                                 "greetings", "howdy", "hiya"]:
-                query_type = "GREETING"
-                print(f"✅ Quick classified as: {query_type}")
-            # Common chitchat
-            elif question_lower in ["how are you", "how are you?", "how r u", "how r u?",
-                                   "what's up", "what's up?", "whats up", "whats up?",
-                                   "how are you doing", "how are you doing?"]:
-                query_type = "CHITCHAT"
-                print(f"✅ Quick classified as: {query_type}")
-            else:
-                # Use AI classifier for ambiguous cases
-                query_type = await classifier.classify(request.question, context)
-                print(f"🤖 AI classified as: {query_type}")
-        else:
-            # Has data context - use AI classifier to handle follow-ups properly
-            query_type = await classifier.classify(request.question, context)
-            print(f"🤖 AI classified as: {query_type} (with data context)")
+        query_type = await classifier.classify(request.question, context)
+        print(f"🤖 AI classified as: {query_type}")
 
         # Step 3: Handle non-data queries (greetings, chitchat)
         if query_type in ["GREETING", "CHITCHAT"]:
