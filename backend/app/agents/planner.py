@@ -80,11 +80,8 @@ class PlannerAgent:
         settings = get_settings()
         genai.configure(api_key=settings.gemini_api_key)
 
-        # Use Gemini 2.5 Flash for better reasoning and planning
-        self.model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=PLANNER_SYSTEM_PROMPT,
-        )
+        # Use Gemini Pro (compatible with older API)
+        self.model = genai.GenerativeModel(model_name="gemini-pro")
 
     async def create_plan(
         self,
@@ -103,8 +100,8 @@ class PlannerAgent:
         Returns:
             Step-by-step execution plan as a string
         """
-        # Build the prompt
-        prompt_parts = []
+        # Build the prompt with system instruction prepended
+        prompt_parts = [PLANNER_SYSTEM_PROMPT, ""]
 
         # Add context if available
         if context and context != "No previous conversation context.":
