@@ -775,4 +775,43 @@ Keep your response focused and under 100 words."""
             return "Results:\n" + "\n".join(f"• {k}: {v}" for k, v in result.items())
 
         # For string results from PandasAI
-        return str(result)
+        result_str = str(result)
+        
+        # Check if result is a chart file path - generate descriptive answer instead
+        if result_str and (
+            result_str.endswith('.png') or 
+            result_str.endswith('.jpg') or
+            result_str.endswith('.svg') or
+            'temp_charts' in result_str or
+            'exports' in result_str
+        ):
+            # Generate a descriptive answer based on the question
+            return self._generate_chart_description(question)
+        
+        return result_str
+    
+    def _generate_chart_description(self, question: str) -> str:
+        """Generate a descriptive answer when a chart was created."""
+        question_lower = question.lower()
+        
+        # Generate contextual description based on question type
+        if "sales" in question_lower and "category" in question_lower:
+            return "Here's a breakdown of sales by category. The chart below shows the distribution across different product categories."
+        elif "top" in question_lower:
+            return "Here are the top results based on your query. See the chart below for a visual comparison."
+        elif "trend" in question_lower or "over time" in question_lower or "year" in question_lower:
+            return "Here's the trend analysis you requested. The chart below shows how values have changed over time."
+        elif "compare" in question_lower or "comparison" in question_lower:
+            return "Here's the comparison you requested. The chart below visualizes the differences."
+        elif "distribution" in question_lower or "pie" in question_lower:
+            return "Here's the distribution breakdown. The chart below shows the proportional breakdown."
+        elif "total" in question_lower or "sum" in question_lower:
+            return "Here are the aggregated totals based on your query. See the chart below for visualization."
+        elif "average" in question_lower or "mean" in question_lower:
+            return "Here are the average values. The chart below provides a visual representation."
+        elif "profit" in question_lower:
+            return "Here's the profit analysis. The chart below shows the profit distribution."
+        elif "region" in question_lower or "state" in question_lower or "country" in question_lower:
+            return "Here's the geographic breakdown. The chart below shows the regional distribution."
+        else:
+            return "Here are the results of your analysis. The chart below visualizes the data."

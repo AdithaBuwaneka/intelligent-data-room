@@ -194,7 +194,7 @@ export function useChat(): UseChatReturn {
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Reload sessions list to update previews
-        loadSessions();
+        await loadSessions();
 
         return data;
       } catch (err) {

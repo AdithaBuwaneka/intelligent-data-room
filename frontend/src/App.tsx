@@ -13,7 +13,7 @@ import { useFileUpload } from './hooks/useFileUpload';
 import type { FileMetadata } from './types';
 
 function App() {
-  const { messages, isLoading, sessionId, sendMessage, startNewChat, previousSessions, switchToSession, clearMessages } = useChat();
+  const { messages, isLoading, sessionId, sendMessage, startNewChat, previousSessions, switchToSession, clearMessages, loadSessions } = useChat();
   const { file, isUploading, setFile, setIsUploading, setError, restoreFile, clearFile } = useFileUpload();
   const [showError, setShowError] = useState<string | null>(null);
   const [showSessionMenu, setShowSessionMenu] = useState(false);
@@ -46,6 +46,8 @@ function App() {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       await fetch(`${API_URL}/api/history/${sessionId}`, { method: 'DELETE' });
       clearMessages();
+      // Reload sessions to update the message count
+      await loadSessions();
     } catch (err) {
       console.error('Failed to clear chat:', err);
     }
