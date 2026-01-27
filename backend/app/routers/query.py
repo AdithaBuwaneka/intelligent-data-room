@@ -219,16 +219,25 @@ async def clear_chat_history(session_id: str):
     """
     Clear chat history for a session.
 
-    Deletes all messages for the given session.
+    Deletes all messages and uploaded files for the given session.
     """
     try:
+        from app.services.database import get_database
+        
         memory = await get_memory_service()
         deleted_count = await memory.clear_session(session_id)
+        
+        # Also delete uploaded files for this session
+        db = await get_database()
+        file_result = await db.files_collection.delete_many(
+            {"session_id": session_id}
+        )
 
         return {
             "session_id": session_id,
             "deleted_count": deleted_count,
-            "message": "Chat history cleared successfully",
+            "files_deleted": file_result.deleted_count,
+            "message": "Chat history and files cleared successfully",
         }
 
     except Exception as e:

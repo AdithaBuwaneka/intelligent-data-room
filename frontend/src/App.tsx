@@ -46,6 +46,7 @@ function App() {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       await fetch(`${API_URL}/api/history/${sessionId}`, { method: 'DELETE' });
       clearMessages();
+      clearFile(); // Clear uploaded file from UI state
       // Reload sessions to update the message count
       await loadSessions();
     } catch (err) {
