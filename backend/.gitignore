@@ -53,5 +53,11 @@ temp/
 *.csv
 *.xlsx
 
+# Generated charts
+exports/
+
+# Test results
+test_results.json
+
 # Logs
 *.log

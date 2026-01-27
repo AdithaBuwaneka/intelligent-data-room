@@ -3,210 +3,169 @@
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Visualize the total sales and total profit for each product category using a bar chart.\n\n**DATA COLUMNS NEEDED:** Category, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Category'.\n2. Calculate the sum of 'Sales' for each 'Category'.\n3. Calculate the sum of 'Profit' for each 'Category'.\n\n**VISUALIZATION:** YES - Grouped bar chart with 'Category' on the X-axis and 'Total Sales' and 'Total Profit' on the Y-axis.\n\n**OUTPUT FORMAT:** A bar chart image displaying the total sales and profit for each category.",
+        "answer": "exports/charts\\fd3334aa-c01a-4a2d-8d40-6db3a61d3b2c.png",
+        "plan": "**OBJECTIVE:** Create a bar chart visualizing the total Sales and total Profit for each product Category.\n\n**DATA COLUMNS NEEDED:** Category, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Category'.\n2. For each 'Category', calculate the sum of 'Sales'.\n3. For each 'Category', calculate the sum of 'Profit'.\n4. Combine these aggregated sales and profit values for each category.\n\n**VISUALIZATION:** YES - Bar chart with 'Category' on the X-axis and two sets of bars on the Y-axis representing 'Total Sales' and 'Total Profit'.\n\n**OUTPUT FORMAT:** Table showing Category, Total Sales, and Total Profit, along with the generated bar chart.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
               "Category": "Furniture",
-              "Sales": 741999.7953
+              "Total Sales": 741999.7953,
+              "Total Profit": 18451.2728
             },
             {
               "Category": "Office Supplies",
-              "Sales": 719047.032
+              "Total Sales": 719047.032,
+              "Total Profit": 122490.8008
             },
             {
               "Category": "Technology",
-              "Sales": 836154.033
+              "Total Sales": 836154.033,
+              "Total Profit": 145454.9481
             }
           ],
           "xKey": "Category",
-          "yKey": "Sales",
+          "yKey": "Total Profit",
           "title": "Create a bar chart showing the total Sales and Profit for...",
           "colors": null
         },
-        "execution_time": 5.070744037628174
+        "execution_time": 10.249069452285767
       },
       "test_name": "E1: Sales & Profit by Category"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Visualize the distribution of total sales across different Regions using a pie chart.\n\n**DATA COLUMNS NEEDED:** Region, Sales\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each 'Region'.\n\n**VISUALIZATION:** YES - Pie chart with slices representing 'Region' and the size of each slice representing the 'Total Sales'.\n\n**OUTPUT FORMAT:** A pie chart showing the total sales distribution by region.",
+        "answer": "exports/charts\\d5e9e8e0-386d-4d93-b5a1-5645bb0a5452.png",
+        "plan": "**OBJECTIVE:** Visualize the distribution of total Sales across different Regions using a pie chart.\n\n**DATA COLUMNS NEEDED:** Region, Sales\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n\n**VISUALIZATION:** YES - Pie chart with slices representing 'Region' and the size of slices based on total 'Sales'.\n\n**OUTPUT FORMAT:** A pie chart showing the distribution of total sales by region, along with a table showing each Region and its total sales.",
         "chart_config": {
           "type": "pie",
           "data": [
             {
               "Region": "Central",
-              "Sales": 501239.8908
+              "Total Sales": 501239.8908
             },
             {
               "Region": "East",
-              "Sales": 678781.24
+              "Total Sales": 678781.24
             },
             {
               "Region": "South",
-              "Sales": 391721.905
+              "Total Sales": 391721.905
             },
             {
               "Region": "West",
-              "Sales": 725457.8245
+              "Total Sales": 725457.8245
             }
           ],
           "xKey": "Region",
-          "yKey": "Sales",
+          "yKey": "Total Sales",
           "title": "Visualize the distribution of total Sales across differen...",
           "colors": null
         },
-        "execution_time": 3.971407413482666
+        "execution_time": 8.318452596664429
       },
       "test_name": "E2: Sales by Region (Pie)"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Identify which Customer Segment places the most orders and visualize this distribution.\n\n**DATA COLUMNS NEEDED:** Segment\n\n**STEPS:**\n1. Group the data by 'Segment'.\n2. Count the number of orders (or rows) for each 'Segment'.\n3. Sort the segments by their order counts in descending order.\n\n**VISUALIZATION:** YES - Bar chart with 'Segment' on the X-axis and 'Number of Orders' on the Y-axis.\n\n**OUTPUT FORMAT:** A table displaying each Customer Segment and the total count of orders for that segment, accompanied by the count plot.",
+        "answer": "exports/charts\\bfea4102-fb62-420f-b715-21c9922ea01e.png",
+        "plan": "**OBJECTIVE:** Determine which Customer Segment has the highest number of unique orders and visualize this distribution.\n\n**DATA COLUMNS NEEDED:** Segment, Order ID\n\n**STEPS:**\n1. Group the data by 'Segment'.\n2. For each 'Segment', count the number of unique 'Order ID's.\n3. Sort the results by the count of unique orders in descending order.\n\n**VISUALIZATION:** YES - Bar chart with 'Segment' on the X-axis and the count of unique 'Order ID's on the Y-axis.\n\n**OUTPUT FORMAT:** A table showing each 'Segment' and its corresponding count of unique 'Order ID's, along with the generated bar chart.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
               "Segment": "Consumer",
-              "Row ID": 25581329
+              "Unique Order Count": 2586
             },
             {
               "Segment": "Corporate",
-              "Row ID": 15504734
+              "Unique Order Count": 1514
             },
             {
               "Segment": "Home Office",
-              "Row ID": 8858952
+              "Unique Order Count": 909
             }
           ],
           "xKey": "Segment",
-          "yKey": "Row ID",
+          "yKey": "Unique Order Count",
           "title": "Which Customer Segment places the most orders? Show this ...",
           "colors": null
         },
-        "execution_time": 4.154252529144287
+        "execution_time": 8.912922620773315
       },
       "test_name": "E3: Orders by Segment"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Identify the top 5 states with the highest total sales and visualize them.\n\n**DATA COLUMNS NEEDED:** State, Sales\n\n**STEPS:**\n1. Group the data by 'State'.\n2. Calculate the sum of 'Sales' for each 'State'.\n3. Sort the results in descending order based on the calculated total sales.\n4. Select the top 5 states from the sorted list.\n\n**VISUALIZATION:** YES - Horizontal bar chart with 'State' on the Y-axis and 'Sales' on the X-axis.\n\n**OUTPUT FORMAT:** Table showing 'State' and its corresponding 'Total Sales' for the top 5 states.",
+        "answer": "exports/charts\\dc6feaa7-2524-423c-b3e1-b33b947c6437.png",
+        "plan": "**OBJECTIVE:** Identify the top 5 states with the highest total sales and visualize them.\n\n**DATA COLUMNS NEEDED:** State, Sales\n\n**STEPS:**\n1. Group the data by 'State'.\n2. Calculate the sum of 'Sales' for each state.\n3. Sort the results in descending order based on the summed 'Sales'.\n4. Select the top 5 states from the sorted results.\n\n**VISUALIZATION:** YES - Horizontal bar chart with 'State' on the Y-axis and 'Total Sales' on the X-axis.\n\n**OUTPUT FORMAT:** Table showing 'State' and 'Total Sales' for the top 5 states.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
-              "State": "Alabama",
-              "Sales": 19510.64
-            },
-            {
-              "State": "Arizona",
-              "Sales": 35282.001
-            },
-            {
-              "State": "Arkansas",
-              "Sales": 11678.13
-            },
-            {
               "State": "California",
-              "Sales": 457687.6315
+              "Total Sales": 457687.6315
             },
             {
-              "State": "Colorado",
-              "Sales": 32108.118
+              "State": "New York",
+              "Total Sales": 310876.271
             },
             {
-              "State": "Connecticut",
-              "Sales": 13384.357
+              "State": "Texas",
+              "Total Sales": 170188.0458
             },
             {
-              "State": "Delaware",
-              "Sales": 27451.069
+              "State": "Washington",
+              "Total Sales": 138641.27
             },
             {
-              "State": "District of Columbia",
-              "Sales": 2865.02
-            },
-            {
-              "State": "Florida",
-              "Sales": 89473.708
-            },
-            {
-              "State": "Georgia",
-              "Sales": 49095.84
+              "State": "Pennsylvania",
+              "Total Sales": 116511.914
             }
           ],
           "xKey": "State",
-          "yKey": "Sales",
+          "yKey": "Total Sales",
           "title": "Identify the Top 5 States by total Sales using a horizont...",
           "colors": null
         },
-        "execution_time": 3.697556257247925
+        "execution_time": 9.016542434692383
       },
       "test_name": "E4: Top 5 States"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Analyze the trend of total profit over the years 2018-2021\n\n**DATA COLUMNS NEEDED:** Order Date, Profit\n\n**STEPS:**\n1. Extract the year from the 'Order Date' column.\n2. Filter the data to include only the years 2018, 2019, 2020, and 2021.\n3. Group the filtered data by the extracted 'Year'.\n4. Calculate the sum of 'Profit' for each year.\n5. Sort the results by 'Year' in ascending order.\n\n**VISUALIZATION:** YES - Line chart with 'Year' on the X-axis and 'Total Profit' on the Y-axis\n\n**OUTPUT FORMAT:** A line chart showing the total profit for each year from 2018 to 2021.",
+        "answer": "exports/charts\\9349dce5-b8f0-420d-b893-363b3667e925.png",
+        "plan": "**OBJECTIVE:** Analyze the trend of total Profit over the years 2018 to 2021\n\n**DATA COLUMNS NEEDED:** Order Date, Profit\n\n**STEPS:**\n1. Extract the year from the 'Order Date' column and create a new column named 'Year'.\n2. Filter the data to include only records where 'Year' is between 2018 and 2021 (inclusive).\n3. Group the filtered data by 'Year'.\n4. Calculate the sum of 'Profit' for each year.\n5. Sort the results by 'Year' in ascending order.\n\n**VISUALIZATION:** YES - Line chart with 'Year' on the X-axis and 'Total Profit' on the Y-axis\n\n**OUTPUT FORMAT:** Table showing Year and Total Profit, along with the requested line chart.",
         "chart_config": {
           "type": "line",
           "data": [
             {
-              "Order Date": "1/1/2021",
-              "Profit": -181.41089999999997
+              "Year": 2018,
+              "Profit": 49543.9741
             },
             {
-              "Order Date": "1/10/2018",
-              "Profit": 22.6537
+              "Year": 2019,
+              "Profit": 61618.6037
             },
             {
-              "Order Date": "1/10/2019",
-              "Profit": -373.3048
+              "Year": 2020,
+              "Profit": 81795.1743
             },
             {
-              "Order Date": "1/10/2020",
-              "Profit": 55.365300000000005
-            },
-            {
-              "Order Date": "1/11/2018",
-              "Profit": 3.0814
-            },
-            {
-              "Order Date": "1/11/2020",
-              "Profit": 25.083399999999997
-            },
-            {
-              "Order Date": "1/12/2019",
-              "Profit": 62.80479999999999
-            },
-            {
-              "Order Date": "1/12/2021",
-              "Profit": -1101.516
-            },
-            {
-              "Order Date": "1/13/2018",
-              "Profit": 673.6386
-            },
-            {
-              "Order Date": "1/13/2019",
-              "Profit": 160.3086
+              "Year": 2021,
+              "Profit": 93439.2696
             }
           ],
-          "xKey": "Order Date",
+          "xKey": "Year",
           "yKey": "Profit",
           "title": "How has the total Profit changed over the Years (2018\u2013202...",
           "colors": null
         },
-        "execution_time": 4.594470262527466
+        "execution_time": 18.0394868850708
       },
       "test_name": "E5: Profit Trend by Year"
     }
@@ -215,38 +174,38 @@
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Identify sub-categories with an average profit less than zero and visualize them.\n\n**DATA COLUMNS NEEDED:** Sub-Category, Profit\n\n**STEPS:**\n1. Group the data by 'Sub-Category'.\n2. Calculate the average of 'Profit' for each 'Sub-Category'.\n3. Filter the results to include only 'Sub-Category' where the calculated average 'Profit' is less than 0.\n4. Sort the filtered sub-categories by their average 'Profit' in ascending order.\n\n**VISUALIZATION:** YES - Horizontal bar chart with 'Sub-Category' on the Y-axis and 'Average Profit' on the X-axis.\n\n**OUTPUT FORMAT:** A table showing 'Sub-Category' and its 'Average Profit' for all sub-categories that are currently unprofitable, accompanied by a horizontal bar chart.",
+        "answer": "exports/charts\\c8558422-b1a6-4599-80c0-393c4c8bb6f0.png",
+        "plan": "**OBJECTIVE:** Identify sub-categories that have an average profit less than zero and visualize them.\n\n**DATA COLUMNS NEEDED:** Sub-Category, Profit\n\n**STEPS:**\n1. Group the data by 'Sub-Category'.\n2. Calculate the mean (average) of 'Profit' for each 'Sub-Category'.\n3. Filter the results to include only 'Sub-Category' where the average profit is less than 0.\n4. Sort the results by average 'Profit' in ascending order to show the most unprofitable first.\n\n**VISUALIZATION:** YES - Horizontal bar chart with Sub-Category on Y-axis and Average Profit on X-axis.\n\n**OUTPUT FORMAT:** Table showing Sub-Category and their Average Profit for all unprofitable sub-categories.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
-              "Category": "Furniture",
-              "Profit": 18451.2728
+              "Sub-Category": "Tables",
+              "Average Profit": -55.56577147335423
             },
             {
-              "Category": "Office Supplies",
-              "Profit": 122490.8008
+              "Sub-Category": "Bookcases",
+              "Average Profit": -15.230508771929825
             },
             {
-              "Category": "Technology",
-              "Profit": 145454.9481
+              "Sub-Category": "Supplies",
+              "Average Profit": -6.258418421052632
             }
           ],
-          "xKey": "Category",
-          "yKey": "Profit",
+          "xKey": "Sub-Category",
+          "yKey": "Average Profit",
           "title": "Which Sub-Categories are currently unprofitable on averag...",
           "colors": null
         },
-        "execution_time": 4.642788410186768
+        "execution_time": 8.4431471824646
       },
       "test_name": "M1: Unprofitable Sub-Categories"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Compare the sales trend of different ship modes over time.\n\n**DATA COLUMNS NEEDED:** Order Date, Ship Mode, Sales\n\n**STEPS:**\n1. Extract the year from the 'Order Date' column.\n2. Group the data by the extracted year and 'Ship Mode'.\n3. Calculate the sum of 'Sales' for each year-ship mode group.\n4. Sort the results by year in ascending order.\n\n**VISUALIZATION:** YES - Multi-line chart with Year on the X-axis, Sum of Sales on the Y-axis, and different lines representing each 'Ship Mode'.\n\n**OUTPUT FORMAT:** A multi-line chart comparing the sales trend of different ship modes over time.",
+        "answer": "exports/charts\\ec48e84e-e525-4bf9-bef2-067a699203a9.png",
+        "plan": "**OBJECTIVE:** Analyze and visualize the sales trend for each 'Ship Mode' over time using a multi-line chart.\n\n**DATA COLUMNS NEEDED:** Order Date, Sales, Ship Mode\n\n**STEPS:**\n1. Extract the year from the 'Order Date' column.\n2. Group the data by the extracted 'Year' and 'Ship Mode'.\n3. Calculate the sum of 'Sales' for each group.\n4. Sort the results by 'Year' in ascending order.\n\n**VISUALIZATION:** YES - Multi-line chart with 'Year' on the X-axis, 'Total Sales' on the Y-axis, and different lines representing each 'Ship Mode'.\n\n**OUTPUT FORMAT:** A multi-line chart showing the sales trend for each ship mode over time.",
         "chart_config": {
           "type": "line",
           "data": [
@@ -296,73 +255,73 @@
           "title": "Compare the Sales Trend of different Ship Modes over time...",
           "colors": null
         },
-        "execution_time": 4.269427537918091
+        "execution_time": 10.173879146575928
       },
       "test_name": "M2: Sales by Ship Mode"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Identify the top 10 customers based on their total profit.\n\n**DATA COLUMNS NEEDED:** Customer Name, Profit\n\n**STEPS:**\n1. Group the data by 'Customer Name'.\n2. Calculate the sum of 'Profit' for each customer.\n3. Sort the results by the summed 'Profit' in descending order.\n4. Select the top 10 rows from the sorted data.\n\n**VISUALIZATION:** YES - Horizontal bar chart with Customer Name on the Y-axis and Total Profit on the X-axis.\n\n**OUTPUT FORMAT:** Table showing Customer Name and their Total Profit for the top 10 customers.",
+        "answer": "exports/charts\\94af54f1-4f2f-44e7-94bb-edc7b7218b0c.png",
+        "plan": "**OBJECTIVE:** Find the 10 customers with the highest total profit.\n\n**DATA COLUMNS NEEDED:** Customer Name, Profit\n\n**STEPS:**\n1. Group the data by 'Customer Name'.\n2. Calculate the sum of 'Profit' for each customer.\n3. Sort the results by the summed 'Profit' in descending order.\n4. Select the top 10 customers from the sorted list.\n\n**VISUALIZATION:** YES - Horizontal bar chart with 'Customer Name' on the Y-axis and 'Total Profit' on the X-axis.\n\n**OUTPUT FORMAT:** Table showing 'Customer Name' and 'Total Profit' for the top 10 customers.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
-              "Customer Name": "Aaron Bergman",
-              "Profit": 129.3465
+              "Customer Name": "Tamara Chand",
+              "Total Profit": 8981.323900000001
             },
             {
-              "Customer Name": "Aaron Hawkins",
-              "Profit": 365.2152
+              "Customer Name": "Raymond Buch",
+              "Total Profit": 6976.0959
             },
             {
-              "Customer Name": "Aaron Smayling",
-              "Profit": -253.57459999999998
+              "Customer Name": "Sanjit Chand",
+              "Total Profit": 5757.411899999999
             },
             {
-              "Customer Name": "Adam Bellavance",
-              "Profit": 2054.5885
-            },
-            {
-              "Customer Name": "Adam Hart",
-              "Profit": 281.189
-            },
-            {
-              "Customer Name": "Adam Shillingsburg",
-              "Profit": 64.53739999999998
+              "Customer Name": "Hunter Lopez",
+              "Total Profit": 5622.4292000000005
             },
             {
               "Customer Name": "Adrian Barton",
-              "Profit": 5444.8055
+              "Total Profit": 5444.8055
             },
             {
-              "Customer Name": "Adrian Hane",
-              "Profit": -2.3145999999999773
+              "Customer Name": "Tom Ashbrook",
+              "Total Profit": 4703.7883
             },
             {
-              "Customer Name": "Adrian Shami",
-              "Profit": 21.8496
+              "Customer Name": "Christopher Martinez",
+              "Total Profit": 3899.8903999999998
             },
             {
-              "Customer Name": "Aimee Bixby",
-              "Profit": 313.6597
+              "Customer Name": "Keith Dawkins",
+              "Total Profit": 3038.6254
+            },
+            {
+              "Customer Name": "Andy Reiter",
+              "Total Profit": 2884.6208
+            },
+            {
+              "Customer Name": "Daniel Raglin",
+              "Total Profit": 2869.0759999999996
             }
           ],
           "xKey": "Customer Name",
-          "yKey": "Profit",
+          "yKey": "Total Profit",
           "title": "List the Top 10 Customers by total Profit and display the...",
           "colors": null
         },
-        "execution_time": 4.127666711807251
+        "execution_time": 9.265036344528198
       },
       "test_name": "M3: Top 10 Customers"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Analyze the correlation between Discount and Profit using a scatter plot.\n\n**DATA COLUMNS NEEDED:** Discount, Profit\n\n**STEPS:**\n1. Select the 'Discount' and 'Profit' columns from the data.\n2. Plot 'Discount' on the X-axis and 'Profit' on the Y-axis.\n\n**VISUALIZATION:** YES - Scatter plot with Discount on X-axis and Profit on Y-axis\n\n**OUTPUT FORMAT:** A scatter plot visualizing the relationship between Discount and Profit.",
+        "answer": "exports/charts\\ba6338ee-91ea-41ef-b87e-73cc04b93d93.png",
+        "plan": "**OBJECTIVE:** Investigate the relationship and correlation between 'Discount' and 'Profit'.\n\n**DATA COLUMNS NEEDED:** Discount, Profit\n\n**STEPS:**\n1. Select 'Discount' and 'Profit' columns from the dataset.\n2. Create a scatter plot using 'Discount' values on the X-axis and 'Profit' values on the Y-axis.\n\n**VISUALIZATION:** YES - Scatter plot with Discount on X-axis and Profit on Y-axis\n\n**OUTPUT FORMAT:** A scatter plot visualizing the relationship between Discount and Profit.",
         "chart_config": {
           "type": "scatter",
           "data": [
@@ -412,7 +371,7 @@
           "title": "Is there a correlation between Discount and Profit? Creat...",
           "colors": null
         },
-        "execution_time": 4.732556104660034
+        "execution_time": 8.200454473495483
       },
       "test_name": "M4: Discount vs Profit"
     }
@@ -421,76 +380,68 @@
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Find the top 3 regions with the highest total sales.\n\n**DATA COLUMNS NEEDED:** Region, Sales\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Sort the results by total sales in descending order.\n4. Select the top 3 regions.\n\n**VISUALIZATION:** YES - Vertical bar chart with Region on X-axis and Total Sales on Y-axis\n\n**OUTPUT FORMAT:** Table showing Region and Total Sales for the top 3 regions.",
+        "answer": "exports/charts\\8e94ec8b-13ac-49b3-87e3-4494b02f63b4.png",
+        "plan": "**OBJECTIVE:** Find the top 3 regions with the highest total sales\n\n**DATA COLUMNS NEEDED:** Region, Sales\n\n**STEPS:**\n1. Group data by 'Region'\n2. Calculate the sum of 'Sales' for each region\n3. Sort the results by total sales in descending order\n4. Select the top 3 regions\n\n**VISUALIZATION:** YES - Vertical bar chart with Region on the X-axis and Total Sales on the Y-axis\n\n**OUTPUT FORMAT:** Table showing Region and Total Sales for the top 3 regions",
         "chart_config": {
           "type": "bar",
           "data": [
             {
-              "Region": "Central",
-              "Sales": 501239.8908
+              "Region": "West",
+              "Total Sales": 725457.8245
             },
             {
               "Region": "East",
-              "Sales": 678781.24
+              "Total Sales": 678781.24
             },
             {
-              "Region": "South",
-              "Sales": 391721.905
-            },
-            {
-              "Region": "West",
-              "Sales": 725457.8245
+              "Region": "Central",
+              "Total Sales": 501239.8908
             }
           ],
           "xKey": "Region",
-          "yKey": "Sales",
+          "yKey": "Total Sales",
           "title": "What are the top 3 regions by sales",
           "colors": null
         },
-        "execution_time": 3.2230405807495117
+        "execution_time": 7.832204580307007
       },
       "test_name": "C1: Top 3 Regions"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Calculate the total profit for the top 3 regions previously identified by sales.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Sort the regions by the sum of 'Sales' in descending order.\n4. Select the top 3 regions based on sales.\n5. Filter the original data to include only these top 3 regions.\n6. Group the filtered data by 'Region'.\n7. Calculate the sum of 'Profit' for each of these top 3 regions.\n8. Sort the final results by sum of 'Profit' in descending order.\n\n**VISUALIZATION:** YES - Vertical bar chart with Region on X-axis and Total Profit on Y-axis\n\n**OUTPUT FORMAT:** Table showing Region and Total Profit for the top 3 regions by sales.",
+        "answer": "exports/charts\\f35daeda-d0cf-4915-b14a-143a8c6d16eb.png",
+        "plan": "**OBJECTIVE:** Calculate the total profit for the top 3 regions by sales identified in the previous turn.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Sort the regions by their total sales in descending order.\n4. Select the top 3 regions based on sales.\n5. Filter the original data to include only the rows corresponding to these top 3 regions.\n6. Group the filtered data by 'Region'.\n7. Calculate the sum of 'Profit' for each of these top 3 regions.\n\n**VISUALIZATION:** YES - Vertical bar chart with Region on the X-axis and Total Profit on the Y-axis\n\n**OUTPUT FORMAT:** Table showing Region and Total Profit for the top 3 regions by sales.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
               "Region": "Central",
-              "Sales": 501239.8908
+              "Total Profit": 39706.3625
             },
             {
               "Region": "East",
-              "Sales": 678781.24
-            },
-            {
-              "Region": "South",
-              "Sales": 391721.905
+              "Total Profit": 91522.78
             },
             {
               "Region": "West",
-              "Sales": 725457.8245
+              "Total Profit": 108418.4489
             }
           ],
           "xKey": "Region",
-          "yKey": "Sales",
+          "yKey": "Total Profit",
           "title": "Now show the profit for those same regions",
           "colors": null
         },
-        "execution_time": 6.212067604064941
+        "execution_time": 9.718646049499512
       },
       "test_name": "C2: Follow-up (Context Test)"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Visualize and compare the total profit for the top 3 regions, previously identified by sales.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Region' and calculate the sum of 'Sales' for each region.\n2. Sort the regions by the calculated sum of 'Sales' in descending order.\n3. Identify the top 3 regions from the sorted list.\n4. Filter the original dataset to include only records from these top 3 identified regions.\n5. Group the filtered data by 'Region' and calculate the sum of 'Profit' for each of these 3 regions.\n6. Create a chart to compare these sums of profit.\n\n**VISUALIZATION:** YES - Bar chart with 'Region' on the X-axis and 'Total Profit' on the Y-axis.\n\n**OUTPUT FORMAT:** A bar chart visually comparing the total profit for the top 3 regions.",
+        "answer": "exports/charts\\60b61aa2-768b-48fa-b35d-a5f486e572de.png",
+        "plan": "**OBJECTIVE:** Create a chart comparing the total profit for the top 3 regions by sales, as identified in the previous turns.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Sort the regions by the sum of 'Sales' in descending order.\n4. Select the top 3 regions from the sorted list.\n5. Filter the original data to include only these top 3 regions.\n6. Group the filtered data by 'Region'.\n7. Calculate the sum of 'Profit' for each of these top 3 regions.\n8. Sort the results by total profit in descending order for better visualization.\n\n**VISUALIZATION:** YES - Bar chart with 'Region' on the X-axis and 'Profit' on the Y-axis.\n\n**OUTPUT FORMAT:** A bar chart displaying the total profit for the top 3 regions.",
         "chart_config": {
           "type": "bar",
           "data": [
@@ -516,7 +467,7 @@
           "title": "Create a chart comparing them",
           "colors": null
         },
-        "execution_time": 7.983750104904175
+        "execution_time": 11.381253004074097
       },
       "test_name": "C3: Follow-up Chart (Context Test)"
     }
@@ -525,42 +476,54 @@
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Display the total sales and total profit for all available regions.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Calculate the sum of 'Profit' for each region.\n4. Present the results, including 'Region', 'Total Sales', and 'Total Profit'.\n\n**VISUALIZATION:** YES - Grouped bar chart with 'Region' on the X-axis, and 'Total Sales' and 'Total Profit' represented by two distinct bars for each region on the Y-axis.\n\n**OUTPUT FORMAT:** A table listing each 'Region' along with its 'Total Sales' and 'Total Profit'.",
+        "answer": "Here are the results:\n\n Region  Total_Sales  Total_Profit  Total_Quantity  Average_Discount\nCentral  501239.8908    39706.3625            8780          0.240353\n   East  678781.2400    91522.7800           10618          0.145365\n  South  391721.9050    46749.4303            6209          0.147253\n   West  725457.8245   108418.4489           12266          0.109335",
+        "plan": "**OBJECTIVE:** Provide a comprehensive overview of key performance indicators (Total Sales, Total Profit, Total Quantity, and Average Discount) for each region.\n\n**DATA COLUMNS NEEDED:** Region, Sales, Profit, Quantity, Discount\n\n**STEPS:**\n1. Group the data by 'Region'.\n2. Calculate the sum of 'Sales' for each region.\n3. Calculate the sum of 'Profit' for each region.\n4. Calculate the sum of 'Quantity' for each region.\n5. Calculate the average of 'Discount' for each region.\n6. Present the results in a table.\n\n**VISUALIZATION:** NO\n\n**OUTPUT FORMAT:** A table showing each 'Region' along with its 'Total Sales', 'Total Profit', 'Total Quantity', and 'Average Discount'.",
         "chart_config": {
           "type": "bar",
           "data": [
             {
               "Region": "Central",
-              "Sales": 501239.8908
+              "Total_Sales": 501239.8908,
+              "Total_Profit": 39706.3625,
+              "Total_Quantity": 8780,
+              "Average_Discount": 0.24035299182092124
             },
             {
               "Region": "East",
-              "Sales": 678781.24
+              "Total_Sales": 678781.24,
+              "Total_Profit": 91522.78,
+              "Total_Quantity": 10618,
+              "Average_Discount": 0.14536516853932585
             },
             {
               "Region": "South",
-              "Sales": 391721.905
+              "Total_Sales": 391721.905,
+              "Total_Profit": 46749.4303,
+              "Total_Quantity": 6209,
+              "Average_Discount": 0.1472530864197531
             },
             {
               "Region": "West",
-              "Sales": 725457.8245
+              "Total_Sales": 725457.8245,
+              "Total_Profit": 108418.4489,
+              "Total_Quantity": 12266,
+              "Average_Discount": 0.10933499843896347
             }
           ],
           "xKey": "Region",
-          "yKey": "Sales",
+          "yKey": "Average_Discount",
           "title": "Show me everything",
           "colors": null
         },
-        "execution_time": 7.174165964126587
+        "execution_time": 15.19444751739502
       },
       "test_name": "EDGE1: Vague Query"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Calculate the average discount specifically for products that have a negative profit.\n\n**DATA COLUMNS NEEDED:** Profit, Discount\n\n**STEPS:**\n1. Filter the dataset to include only rows where 'Profit' is less than 0.\n2. Calculate the average of the 'Discount' column for the filtered data.\n\n**VISUALIZATION:** NO\n\n**OUTPUT FORMAT:** A single numerical value representing the average discount.",
+        "answer": "The answer is: **0.4809**",
+        "plan": "**OBJECTIVE:** Calculate the average discount for products that have a negative profit.\n\n**DATA COLUMNS NEEDED:** Profit, Discount\n\n**STEPS:**\n1. Filter the data to include only rows where 'Profit' is less than 0.\n2. Calculate the average of the 'Discount' column for the filtered data.\n\n**VISUALIZATION:** NO\n\n**OUTPUT FORMAT:** A single numerical value representing the average discount.",
         "chart_config": {
           "type": "bar",
           "data": [
@@ -610,15 +573,15 @@
           "title": "Calculate the average discount for products with negative...",
           "colors": null
         },
-        "execution_time": 3.9542036056518555
+        "execution_time": 6.951103448867798
       },
       "test_name": "EDGE2: Complex Filter"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "**OBJECTIVE:** Determine the return rate of products/orders.\n\n**DATA COLUMNS NEEDED:** Not available in the provided schema.\n\n**STEPS:**\n1. Identify the number of returned orders/products.\n2. Identify the total number of orders/products.\n3. Calculate the return rate as (Number of returned orders/products / Total number of orders/products) * 100%.\n\n**VISUALIZATION:** NO\n\n**OUTPUT FORMAT:** A statement indicating that the necessary data to identify returns (e.g., a 'Return Status' column or an indicator of returned items) is not available in the provided schema, and therefore, the return rate cannot be calculated.",
+        "answer": "This question cannot be answered because the dataset doesn't contain information about returns (e.g., a 'Returned' column or return status).",
+        "plan": "**OBJECTIVE:** Calculate the return rate of products or orders.\n\n**DATA COLUMNS NEEDED:** To calculate the return rate, a column explicitly indicating whether an item or order has been returned is required. This information is not available in the provided data schema.\n\n**STEPS:**\n1. **Identify Missing Data:** The provided data schema does not contain any column that indicates if a product or order was returned (e.g., 'Returned', 'Return Status', or an equivalent flag).\n2. **Conclude Impossibility:** Without this crucial information, the return rate cannot be calculated from the available dataset.\n\n**VISUALIZATION:** NO\n\n**OUTPUT FORMAT:** A statement explaining that the return rate cannot be calculated due to the absence of return-related information in the data schema.",
         "chart_config": {
           "type": "bar",
           "data": [
@@ -668,17 +631,65 @@
           "title": "What is the return rate",
           "colors": null
         },
-        "execution_time": 5.277877569198608
+        "execution_time": 11.525021076202393
       },
       "test_name": "EDGE3: Missing Column"
     },
     {
       "status": "PASS",
       "result": {
-        "answer": "exports/charts\\temp_chart.png",
-        "plan": "No user question was provided. Please provide a question so I can create an execution plan.",
-        "chart_config": null,
-        "execution_time": 8.270979881286621
+        "answer": "Please provide a question about your data.",
+        "plan": "Please provide a user question. I am ready to create an execution plan for it.",
+        "chart_config": {
+          "type": "bar",
+          "data": [
+            {
+              "Order ID": "CA-2018-100006",
+              "Row ID": 2718
+            },
+            {
+              "Order ID": "CA-2018-100090",
+              "Row ID": 12577
+            },
+            {
+              "Order ID": "CA-2018-100293",
+              "Row ID": 9515
+            },
+            {
+              "Order ID": "CA-2018-100328",
+              "Row ID": 3084
+            },
+            {
+              "Order ID": "CA-2018-100363",
+              "Row ID": 7673
+            },
+            {
+              "Order ID": "CA-2018-100391",
+              "Row ID": 9441
+            },
+            {
+              "Order ID": "CA-2018-100678",
+              "Row ID": 26282
+            },
+            {
+              "Order ID": "CA-2018-100706",
+              "Row ID": 18041
+            },
+            {
+              "Order ID": "CA-2018-100762",
+              "Row ID": 25266
+            },
+            {
+              "Order ID": "CA-2018-100860",
+              "Row ID": 9660
+            }
+          ],
+          "xKey": "Order ID",
+          "yKey": "Row ID",
+          "title": "",
+          "colors": null
+        },
+        "execution_time": 6.286900758743286
       },
       "test_name": "EDGE4: Empty Query"
     }

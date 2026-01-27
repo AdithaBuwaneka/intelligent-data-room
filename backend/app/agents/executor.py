@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import re
 import os
+import time
 from typing import Optional, Any
 from pandasai import SmartDataframe
 from pandasai.llm.google_gemini import GoogleGemini
@@ -19,10 +20,9 @@ from app.config import get_settings
 
 class GeminiFlash(GoogleGemini):
     """
-    Custom GoogleGemini LLM that uses gemini-1.5-flash model.
-    Gemini 2.5 has issues with PandasAI - using 1.5 for better compatibility.
+    Custom GoogleGemini LLM that uses gemini-2.0-flash model for PandasAI.
     """
-    model: str = "models/gemini-1.5-flash"
+    model: str = "gemini-2.0-flash"
 
     def _configure(self, api_key: str):
         """Configure with the correct model."""
@@ -78,6 +78,9 @@ class ExecutorAgent:
             - answer: String answer to the question
             - chart_config: Optional chart configuration for visualization
         """
+        # Track timestamp before execution to find only new charts
+        start_time = time.time()
+
         try:
             # Create SmartDataframe with PandasAI
             smart_df = SmartDataframe(
@@ -94,9 +97,12 @@ class ExecutorAgent:
                 },
             )
 
-            # Create enhanced prompt that forces code generation
+            # Create enhanced prompt that includes the plan for context
             enhanced_prompt = f"""
-{question}
+Based on the following analysis plan:
+{plan}
+
+User Question: {question}
 
 IMPORTANT: You must write Python code using pandas operations to answer this question.
 Always return a concrete result (number, DataFrame, or value), never just an explanation.
@@ -107,9 +113,23 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
             result = smart_df.chat(enhanced_prompt)
             print(f"✅ PandasAI result type: {type(result)}")
 
-            # Check for chart file
-            chart_path = self._find_generated_chart()
-            
+            # Check if PandasAI returned an error string (it catches exceptions internally)
+            if isinstance(result, str) and (
+                "unfortunately" in result.lower() or
+                "no code found" in result.lower() or
+                "error" in result.lower()
+            ):
+                print(f"⚠️ PandasAI returned error string, using fallback")
+                fallback_config = self._generate_chart_config_fallback(plan, df, question)
+                fallback_answer = self._generate_fallback_answer(plan, df, question, fallback_config)
+                return {
+                    "answer": fallback_answer,
+                    "chart_config": fallback_config,
+                }
+
+            # Check for chart file generated after start_time
+            chart_path = self._find_generated_chart(start_time)
+
             # Process the result
             answer = self._format_result(result, question, chart_path)
 
@@ -124,14 +144,16 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
         except Exception as e:
             print(f"❌ Executor error: {e}")
             error_msg = str(e)
-            
-            # Better error messages
+
+            # Better error messages with fallback chart generation
             if "No code found" in error_msg:
+                fallback_config = self._generate_chart_config_fallback(plan, df, question)
+                fallback_answer = self._generate_fallback_answer(plan, df, question, fallback_config)
                 return {
-                    "answer": "I couldn't generate the analysis code. Let me try a different approach.",
-                    "chart_config": self._generate_chart_config_fallback(plan, df, question),
+                    "answer": fallback_answer,
+                    "chart_config": fallback_config,
                 }
-            
+
             return {
                 "answer": f"I encountered an error while analyzing: {error_msg}. Please try rephrasing your question.",
                 "chart_config": None,
@@ -314,22 +336,31 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
 
         return title
     
-    def _find_generated_chart(self) -> Optional[str]:
-        """Find the most recently generated chart file."""
+    def _find_generated_chart(self, after_timestamp: float = 0) -> Optional[str]:
+        """Find a chart file generated after the given timestamp."""
         try:
             chart_files = [
                 os.path.join(self.chart_dir, f)
                 for f in os.listdir(self.chart_dir)
                 if f.endswith('.png')
             ]
-            
+
             if not chart_files:
                 return None
-                
-            # Return most recent file
-            latest_chart = max(chart_files, key=os.path.getmtime)
+
+            # Filter to only charts created after the timestamp
+            new_charts = [
+                f for f in chart_files
+                if os.path.getmtime(f) > after_timestamp
+            ]
+
+            if not new_charts:
+                return None
+
+            # Return most recent new file
+            latest_chart = max(new_charts, key=os.path.getmtime)
             return latest_chart
-            
+
         except Exception as e:
             print(f"❌ Chart search error: {e}")
             return None
@@ -340,14 +371,14 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
             chart_type = self._determine_chart_type(plan, question)
             if not chart_type:
                 return None
-            
+
             chart_data = self._generate_chart_data_from_df(df, plan, question)
             if not chart_data:
                 return None
-            
+
             x_key, y_key = self._determine_chart_keys(chart_data, plan, question)
             title = self._generate_chart_title(question)
-            
+
             return {
                 "type": chart_type,
                 "data": chart_data,
@@ -358,6 +389,67 @@ Always return a concrete result (number, DataFrame, or value), never just an exp
         except Exception as e:
             print(f"❌ Fallback chart generation error: {e}")
             return None
+
+    def _generate_fallback_answer(
+        self,
+        plan: str,
+        df: pd.DataFrame,
+        question: str,
+        chart_config: Optional[dict],
+    ) -> str:
+        """Generate a text answer when PandasAI fails, using the plan and data."""
+        try:
+            plan_lower = plan.lower()
+
+            # Check if the plan indicates insufficient/missing data
+            insufficient_indicators = [
+                "insufficient data",
+                "cannot be answered",
+                "cannot be calculated",
+                "no such column",
+                "not available",
+                "none (insufficient",
+                "none (cannot be",
+                "data columns needed:** none",
+            ]
+
+            for indicator in insufficient_indicators:
+                if indicator in plan_lower:
+                    # Extract what's missing from the question context
+                    if "return" in question.lower():
+                        return "This question cannot be answered because the dataset doesn't contain information about returns (e.g., a 'Returned' column or return status)."
+                    else:
+                        return "This question cannot be answered with the available data. The required information is not present in the dataset."
+
+            # Check for empty question
+            if not question or not question.strip():
+                return "Please provide a question about your data."
+
+            # If we have chart data, summarize it
+            if chart_config and chart_config.get("data"):
+                data = chart_config["data"]
+                x_key = chart_config.get("xKey", "name")
+                y_key = chart_config.get("yKey", "value")
+
+                # Build a text summary
+                summary_lines = []
+                for item in data[:5]:  # Top 5 items
+                    x_val = item.get(x_key, "Unknown")
+                    y_val = item.get(y_key, 0)
+                    if isinstance(y_val, (int, float)):
+                        summary_lines.append(f"• {x_val}: {y_val:,.2f}")
+                    else:
+                        summary_lines.append(f"• {x_val}: {y_val}")
+
+                if summary_lines:
+                    return "Here are the results:\n\n" + "\n".join(summary_lines)
+
+            # Generic fallback
+            return "I analyzed the data based on your question. Please see the chart for visual results."
+
+        except Exception as e:
+            print(f"❌ Fallback answer generation error: {e}")
+            return "I encountered an issue generating the analysis. Please try rephrasing your question."
 
     def _format_result(self, result: Any, question: str, chart_path: Optional[str] = None) -> str:
         """Format the PandasAI result into a readable answer."""
