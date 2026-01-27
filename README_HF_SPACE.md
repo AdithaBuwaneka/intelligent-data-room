@@ -1,10 +1,12 @@
 ---
-title: Intelligent Data Room
+title: Intelligent Data Room API
 emoji: 📊
 colorFrom: blue
 colorTo: purple
 sdk: docker
+sdk_version: "4.36.0"
 python_version: "3.11"
+app_port: 7860
 pinned: false
 license: mit
 ---
