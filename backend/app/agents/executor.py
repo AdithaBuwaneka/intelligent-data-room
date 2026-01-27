@@ -202,6 +202,9 @@ User Question: {question}
 
 IMPORTANT: You must write Python code using pandas operations to answer this question.
 Always return a concrete result (number, DataFrame, or value), never just an explanation.
+
+For charts: Save with plt.savefig("temp_chart.png") then return {{"type": "plot", "value": "temp_chart.png"}}
+Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
 """
 
             # Execute the query using PandasAI
