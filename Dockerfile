@@ -22,12 +22,13 @@ COPY backend/ ./backend/
 # Create necessary directories
 RUN mkdir -p /app/backend/exports/charts /app/backend/data
 
-# Expose port
-EXPOSE 7860
-
-# Set environment variables for production
+# Set Python path so imports work
+ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
 ENV PORT=7860
 
+# Change to backend directory
+WORKDIR /app/backend
+
 # Hugging Face Spaces uses port 7860 by default
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
