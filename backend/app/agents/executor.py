@@ -34,12 +34,12 @@ class ExecutorAgent:
 
         # WORKAROUND: PandasAI 2.2.15 GoogleGemini class hardcodes model in _configure()
         # before _set_params() runs, so we must monkey-patch the class attribute
-        # Try available Gemini models in order
+        # Try available Gemini models for v1beta API in order
         models_to_try = [
-            "gemini-1.5-flash-latest",  # Latest stable flash
-            "gemini-1.5-pro-latest",    # Latest stable pro
-            "gemini-1.5-flash",         # Stable flash
-            "gemini-1.5-pro",           # Stable pro
+            "gemini-1.5-flash",         # Stable flash (v1beta)
+            "gemini-1.5-pro",           # Stable pro (v1beta)
+            "gemini-2.0-flash-exp",     # Experimental 2.0
+            "gemini-1.0-pro",           # Legacy 1.0 pro
         ]
         
         self.llm = None
