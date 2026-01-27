@@ -2,7 +2,12 @@
 
 AI-powered data analysis platform with multi-agent architecture. Upload CSV/XLSX files and chat with your data using natural language.
 
-**Live Demo:** [intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app) | **API:** [adithaf7-intelligent-data-room.hf.space](https://adithaf7-intelligent-data-room.hf.space)
+## 🔗 Quick Links
+
+- **Live Demo:** [intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app)
+- **Backend API:** [adithaf7-intelligent-data-room.hf.space](https://adithaf7-intelligent-data-room.hf.space)
+- **Health Check:** [adithaf7-intelligent-data-room.hf.space/health](https://adithaf7-intelligent-data-room.hf.space/health)
+- **GitHub Repo:** [github.com/AdithaBuwaneka/intelligent-data-room](https://github.com/AdithaBuwaneka/intelligent-data-room)
 
 ---
 
