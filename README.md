@@ -168,11 +168,13 @@ User: "What about their locations?"
 AI: [Understands context from previous query]
 
 "Calculate Return Rate by Region. Don't give any chart"
-→ Returns only table (respects preference)
+→ ⚠️ Note: Sample dataset lacks return data - AI will explain limitation and suggest alternatives
 
 "hi" or "how are you"
 → Responds conversationally without triggering data analysis
 ```
+
+> **📝 Note on Test Prompt #10:** The challenge includes "Calculate Return Rate" but the Sample Superstore.csv doesn't contain return/refund data. The AI correctly identifies this limitation and explains what data would be needed. This demonstrates intelligent error handling.
 
 ---
 

@@ -646,19 +646,20 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
 
             # Build the prompt for Gemini
             if is_insufficient_data:
-                prompt = f"""You are a data analysis assistant. The user asked a question that cannot be fully answered with the available data.
+                prompt = f"""You are a helpful data analysis assistant. The user asked a question that cannot be answered with the current dataset.
 
 User Question: {question}
 
-Available Data Schema:
-- Columns: {columns_info}
-- Shape: {data_shape}
+Available Data Columns: {columns_info}
 
-Analysis Plan (shows what's missing):
+Analysis Plan Notes:
 {plan}
 
-Please provide a helpful response explaining what data would be needed to answer this question, and if possible, suggest what analysis CAN be done with the available data.
-Keep your response concise (2-3 sentences)."""
+Provide a friendly response that:
+1. Explains what data/column is missing (e.g., "Returns" or "Return Status")
+2. Suggests what alternative analysis CAN be done with the current data (e.g., sales by region, profit trends, etc.)
+
+Keep response concise, helpful, and actionable (3-4 sentences max)."""
             else:
                 # Perform basic pandas analysis to get actual results
                 analysis_result = self._perform_pandas_analysis(df, question, plan)
