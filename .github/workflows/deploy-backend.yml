@@ -1,4 +1,4 @@
-name: Deploy Backend to HuggingFace Spaces
+name: Deploy to HuggingFace Spaces
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     paths:
       - 'backend/**'
       - 'Dockerfile'
-      - 'requirements.txt'
+      - 'README.md'
       - '.github/workflows/deploy-backend.yml'
 
 jobs:
