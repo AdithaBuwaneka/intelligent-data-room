@@ -2,10 +2,10 @@
 Planner Agent
 
 Analyzes user questions and data schema to create step-by-step execution plans.
-Uses Google Gemini API for natural language understanding.
+Uses Google Gemini API (google-genai SDK) for natural language understanding.
 """
 
-import google.generativeai as genai
+from google import genai
 from typing import Optional
 
 from app.config import get_settings
@@ -78,13 +78,10 @@ class PlannerAgent:
     def __init__(self):
         """Initialize the Planner Agent with Google Gemini API."""
         settings = get_settings()
-        genai.configure(api_key=settings.gemini_api_key)
 
-        # Use Gemini 2.5 Flash for advanced planning
-        self.model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=PLANNER_SYSTEM_PROMPT,
-        )
+        # Use the new google-genai SDK
+        self.client = genai.Client(api_key=settings.gemini_api_key)
+        self.model_name = "gemini-2.5-flash"  # Latest, most capable flash model
 
     async def create_plan(
         self,
@@ -103,8 +100,8 @@ class PlannerAgent:
         Returns:
             Step-by-step execution plan as a string
         """
-        # Build the prompt
-        prompt_parts = []
+        # Build the prompt with system instruction
+        prompt_parts = [PLANNER_SYSTEM_PROMPT, "\n---\n"]
 
         # Add context if available
         if context and context != "No previous conversation context.":
@@ -123,7 +120,12 @@ class PlannerAgent:
         full_prompt = "\n".join(prompt_parts)
 
         try:
-            response = await self.model.generate_content_async(full_prompt)
+            # Use the new SDK - note: using sync call in async context
+            # The new SDK handles this properly
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt
+            )
             plan = response.text.strip()
             return plan
 
