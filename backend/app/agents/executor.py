@@ -12,20 +12,10 @@ import os
 import time
 from typing import Optional, Any
 from pandasai import Agent
-from pandasai.llm.google_gemini import GoogleGemini
+from pandasai.llm.bamboo_llm import BambooLLM
 import google.generativeai as genai
 
 from app.config import get_settings
-
-
-# Patch GoogleGemini to use available model in v1beta API
-class PatchedGoogleGemini(GoogleGemini):
-    """GoogleGemini LLM patched to use models/gemini-1.0-pro."""
-    
-    def __init__(self, api_key: str):
-        super().__init__(api_key=api_key)
-        # Override the model to use gemini-1.0-pro (available in v1beta)
-        self.google_gemini = genai.GenerativeModel("models/gemini-1.0-pro")
 
 
 class ExecutorAgent:
@@ -43,8 +33,8 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        # Initialize Patched Google Gemini LLM for PandasAI with gemini-1.5-flash
-        self.llm = PatchedGoogleGemini(api_key=settings.gemini_api_key)
+        # Initialize BambooLLM with Gemini API key for PandasAI 3.x
+        self.llm = BambooLLM(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
