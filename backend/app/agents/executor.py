@@ -13,8 +13,19 @@ import time
 from typing import Optional, Any
 from pandasai import Agent
 from pandasai.llm.google_gemini import GoogleGemini
+import google.generativeai as genai
 
 from app.config import get_settings
+
+
+# Patch GoogleGemini to use gemini-1.5-flash instead of gemini-pro
+class PatchedGoogleGemini(GoogleGemini):
+    """GoogleGemini LLM patched to use gemini-1.5-flash."""
+    
+    def __init__(self, api_key: str):
+        super().__init__(api_key=api_key)
+        # Override the model to use gemini-1.5-flash
+        self.google_gemini = genai.GenerativeModel("gemini-1.5-flash")
 
 
 class ExecutorAgent:
@@ -32,9 +43,8 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        # Initialize Google Gemini LLM for PandasAI
-        # Using gemini-1.5-flash as it's supported by PandasAI 2.2.14
-        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
+        # Initialize Patched Google Gemini LLM for PandasAI with gemini-1.5-flash
+        self.llm = PatchedGoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
