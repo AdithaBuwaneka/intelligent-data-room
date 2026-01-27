@@ -1,11 +1,17 @@
 # Intelligent Data Room
 
+[![Backend Status](https://img.shields.io/badge/Backend-Running-brightgreen)](https://adithaf7-intelligent-data-room.hf.space)
+[![Frontend Status](https://img.shields.io/badge/Frontend-Live-blue)](https://intelligent-data-room.vercel.app)
+
 AI-powered data analysis platform with a multi-agent system. Upload CSV/XLSX files and chat with your data in natural language.
 
 ## 🌐 Live Demo
 
-- **Frontend:** [intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app)
-- **Backend API:** [huggingface.co/spaces/adithaf7/intelligent-data-room](https://huggingface.co/spaces/adithaf7/intelligent-data-room)
+| Component | URL |
+|-----------|-----|
+| **Frontend** | [intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app) |
+| **Backend API** | [adithaf7-intelligent-data-room.hf.space](https://adithaf7-intelligent-data-room.hf.space) |
+| **API Docs** | [adithaf7-intelligent-data-room.hf.space/docs](https://adithaf7-intelligent-data-room.hf.space/docs) |
 
 ## 🎯 Features
 
