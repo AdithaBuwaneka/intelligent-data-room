@@ -20,12 +20,12 @@ from app.config import get_settings
 
 # Patch GoogleGemini to use gemini-1.5-flash instead of gemini-pro
 class PatchedGoogleGemini(GoogleGemini):
-    """GoogleGemini LLM patched to use gemini-1.5-flash."""
+    """GoogleGemini LLM patched to use gemini-1.5-flash-latest."""
     
     def __init__(self, api_key: str):
         super().__init__(api_key=api_key)
-        # Override the model to use gemini-1.5-flash
-        self.google_gemini = genai.GenerativeModel("gemini-1.5-flash")
+        # Override the model to use gemini-1.5-flash-latest with full path
+        self.google_gemini = genai.GenerativeModel("models/gemini-1.5-flash-latest")
 
 
 class ExecutorAgent:
