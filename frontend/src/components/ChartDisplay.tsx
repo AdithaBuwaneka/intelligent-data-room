@@ -43,7 +43,8 @@ const DEFAULT_COLORS = [
 ];
 
 export function ChartDisplay({ config }: ChartDisplayProps) {
-  const { type, data, xKey, yKey, title, colors = DEFAULT_COLORS } = config;
+  const { type, data, xKey, yKey, title, colors: configColors } = config;
+  const colors = configColors && configColors.length > 0 ? configColors : DEFAULT_COLORS;
 
   if (!data || data.length === 0) {
     return (
@@ -71,7 +72,15 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
   };
 
   const renderBarChart = () => {
-    const yKeys = Array.isArray(yKey) ? yKey : [yKey];
+    const yKeys = Array.isArray(yKey) ? yKey.filter(k => k) : (yKey ? [yKey] : []);
+    
+    if (yKeys.length === 0) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No data key specified for chart
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -107,7 +116,15 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
   };
 
   const renderLineChart = () => {
-    const yKeys = Array.isArray(yKey) ? yKey : [yKey];
+    const yKeys = Array.isArray(yKey) ? yKey.filter(k => k) : (yKey ? [yKey] : []);
+    
+    if (yKeys.length === 0) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No data key specified for chart
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -147,6 +164,14 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
 
   const renderPieChart = () => {
     const dataKey = Array.isArray(yKey) ? yKey[0] : yKey;
+    
+    if (!dataKey) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No data key specified for chart
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -185,6 +210,14 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
 
   const renderScatterChart = () => {
     const yDataKey = Array.isArray(yKey) ? yKey[0] : yKey;
+    
+    if (!yDataKey) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No data key specified for chart
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -214,7 +247,15 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
   };
 
   const renderAreaChart = () => {
-    const yKeys = Array.isArray(yKey) ? yKey : [yKey];
+    const yKeys = Array.isArray(yKey) ? yKey.filter(k => k) : (yKey ? [yKey] : []);
+    
+    if (yKeys.length === 0) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No data key specified for chart
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={300}>
