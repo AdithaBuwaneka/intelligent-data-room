@@ -4,6 +4,7 @@ emoji: 📊
 colorFrom: blue
 colorTo: indigo
 sdk: docker
+app_file: app/main.py
 pinned: false
 ---
 
@@ -32,36 +33,6 @@ Friendly Response
 | `/api/history/{id}` | GET | Get chat history |
 | `/api/sessions` | GET | List all sessions |
 | `/health` | GET | Health check |
-
-## 🚀 Local Setup
-
-```bash
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload --port 8000
-```
-
-## 🔧 Environment Variables
-
-```env
-GEMINI_API_KEY=your_gemini_api_key
-MONGODB_URI=your_mongodb_connection_string
-IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
-IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_id
-```
-
-## 📁 Structure
-
-```
-app/
-├── agents/         # Planner, Executor, Classifier
-├── graph/          # LangGraph workflow
-├── routers/        # API routes (upload, query)
-├── services/       # Database, ImageKit, Memory
-├── models/         # Pydantic schemas
-└── main.py         # FastAPI app
-```
 
 ## 🤖 Agent System
 
