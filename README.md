@@ -21,7 +21,8 @@ AI-powered data analysis platform with a multi-agent system. Upload CSV/XLSX fil
 |-----------|-----|
 | **Frontend** | [intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app) |
 | **Backend API** | [adithaf7-intelligent-data-room.hf.space](https://adithaf7-intelligent-data-room.hf.space) |
-| **API Docs** | [adithaf7-intelligent-data-room.hf.space/docs](https://adithaf7-intelligent-data-room.hf.space/docs) |
+| **Health Check** | [adithaf7-intelligent-data-room.hf.space/health](https://adithaf7-intelligent-data-room.hf.space/health) |
+| **GitHub Actions** | [GitHub Actions](https://github.com/AdithaBuwaneka/intelligent-data-room/actions) |
 
 ## 🎯 Features
 
