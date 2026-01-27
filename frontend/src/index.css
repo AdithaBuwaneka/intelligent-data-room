@@ -61,23 +61,26 @@ body {
   .message-user {
     @apply bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-2;
     display: inline-block;
-    max-width: 80%;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    max-width: 100%;
+    min-width: fit-content;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .message-assistant {
     @apply bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md px-4 py-2;
     display: inline-block;
-    max-width: 80%;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    max-width: 100%;
+    min-width: fit-content;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .whitespace-nowrap-for-short {
+    display: inline;
     white-space: normal;
-    word-break: normal;
-    overflow-wrap: break-word;
   }
 }
 
