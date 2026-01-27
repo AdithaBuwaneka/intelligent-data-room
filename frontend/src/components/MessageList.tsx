@@ -66,6 +66,27 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 }
 
 /**
+ * Filter out chart file paths from message content
+ * These paths (like temp_charts/xxx.png) should not be displayed in chat
+ */
+function filterChartPaths(content: string): string {
+  if (!content) return content;
+  
+  // Remove lines that are only chart file paths
+  const lines = content.split('\n');
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+    // Filter out lines that are just file paths to temp_charts or chart files
+    if (/^(temp_charts|charts|exports)?[\\\/]?[\w-]+\.(png|jpg|jpeg|svg)$/i.test(trimmed)) {
+      return false;
+    }
+    return true;
+  });
+  
+  return filteredLines.join('\n').trim();
+}
+
+/**
  * Individual message bubble component
  */
 function MessageBubble({ message }: { message: Message }) {
@@ -101,14 +122,16 @@ function MessageBubble({ message }: { message: Message }) {
                   : 'message-assistant'
               }
             >
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="whitespace-pre-wrap break-words">{filterChartPaths(message.content)}</p>
             </div>
 
             {/* Execution plan (collapsible) */}
             {message.plan && <ExecutionPlan plan={message.plan} />}
 
-            {/* Chart display */}
-            {message.chartConfig && <ChartDisplay config={message.chartConfig} />}
+            {/* Chart display - only render if config has valid data */}
+            {message.chartConfig && message.chartConfig.data && message.chartConfig.data.length > 0 && (
+              <ChartDisplay config={message.chartConfig} />
+            )}
 
             {/* Timestamp */}
             <p className={`text-xs text-gray-400 ${isUser ? 'text-right' : 'text-left'}`}>

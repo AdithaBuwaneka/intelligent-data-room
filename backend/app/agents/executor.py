@@ -737,9 +737,8 @@ Keep your response focused and under 100 words."""
 
     def _format_result(self, result: Any, question: str, chart_path: Optional[str] = None) -> str:
         """Format the PandasAI result into a readable answer."""
-        # If a chart was generated, return the path
-        if chart_path:
-            return chart_path
+        # Note: chart_path is no longer returned as the answer text
+        # Charts are rendered via chart_config, the answer should be descriptive text
         
         if result is None:
             return "I couldn't find a specific answer. Please try rephrasing your question."
