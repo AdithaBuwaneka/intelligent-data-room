@@ -32,11 +32,9 @@ class ExecutorAgent:
         """Initialize the Executor Agent with PandasAI and Gemini."""
         settings = get_settings()
 
-        # Initialize Google Gemini LLM for PandasAI with correct model
-        self.llm = GoogleGemini(
-            api_key=settings.gemini_api_key,
-            model="gemini-2.0-flash-exp"
-        )
+        # Initialize Google Gemini LLM for PandasAI
+        # Using gemini-1.5-flash as it's supported by PandasAI 2.2.14
+        self.llm = GoogleGemini(api_key=settings.gemini_api_key)
         
         # Chart export directory
         self.chart_dir = "exports/charts"
