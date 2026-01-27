@@ -3,7 +3,7 @@
  *
  * Manages chat state, session, and message operations.
  * Handles communication with the backend API.
- * Supports chat history restoration and new chat creation.
+ * Supports chat history restoration, new chat creation, and session switching.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -11,17 +11,28 @@ import type { Message, QueryResponse } from '../types';
 
 const SESSION_KEY = 'idr_session_id';
 
+interface SessionInfo {
+  sessionId: string;
+  preview: string;
+  messageCount: number;
+  createdAt: string;
+  lastActivity: string;
+}
+
 interface UseChatReturn {
   messages: Message[];
   isLoading: boolean;
   isRestoring: boolean;
   error: string | null;
   sessionId: string;
+  previousSessions: SessionInfo[];
   sendMessage: (content: string, fileUrl: string) => Promise<QueryResponse>;
   clearMessages: () => void;
   clearError: () => void;
   startNewChat: () => void;
+  switchToSession: (sessionId: string) => void;
   restoreHistory: () => Promise<void>;
+  loadSessions: () => Promise<void>;
 }
 
 /**
@@ -51,6 +62,44 @@ export function useChat(): UseChatReturn {
   const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>(getOrCreateSessionId);
+  const [previousSessions, setPreviousSessions] = useState<SessionInfo[]>([]);
+
+  /**
+   * Load sessions list from MongoDB via API
+   */
+  const loadSessions = useCallback(async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/api/sessions`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const sessions: SessionInfo[] = data.sessions
+          .filter((s: { session_id: string }) => s.session_id !== sessionId)
+          .map((s: {
+            session_id: string;
+            preview: string;
+            message_count: number;
+            created_at: string;
+            last_activity: string;
+          }) => ({
+            sessionId: s.session_id,
+            preview: s.preview,
+            messageCount: s.message_count,
+            createdAt: s.created_at,
+            lastActivity: s.last_activity,
+          }));
+        setPreviousSessions(sessions);
+      }
+    } catch (err) {
+      console.warn('Failed to load sessions:', err);
+    }
+  }, [sessionId]);
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   /**
    * Restore chat history from backend
@@ -89,7 +138,7 @@ export function useChat(): UseChatReturn {
     }
   }, [sessionId]);
 
-  // Restore history on mount
+  // Restore history on mount and session change
   useEffect(() => {
     restoreHistory();
   }, [restoreHistory]);
@@ -144,6 +193,9 @@ export function useChat(): UseChatReturn {
 
         setMessages((prev) => [...prev, assistantMessage]);
 
+        // Reload sessions list to update previews
+        loadSessions();
+
         return data;
       } catch (err) {
         const errorMessage =
@@ -165,7 +217,7 @@ export function useChat(): UseChatReturn {
         setIsLoading(false);
       }
     },
-    [sessionId]
+    [sessionId, loadSessions]
   );
 
   /**
@@ -178,15 +230,26 @@ export function useChat(): UseChatReturn {
 
   /**
    * Start a completely new chat session
-   * Clears messages and creates a new session ID
    */
   const startNewChat = useCallback(() => {
     setMessages([]);
     setError(null);
     const newId = createNewSessionId();
     setSessionId(newId);
-    // Clear file from localStorage too
     localStorage.removeItem('idr_uploaded_file');
+    // Reload sessions to show the old session in the list
+    setTimeout(() => loadSessions(), 100);
+  }, [loadSessions]);
+
+  /**
+   * Switch to a previous session
+   */
+  const switchToSession = useCallback((targetSessionId: string) => {
+    setMessages([]);
+    setError(null);
+    localStorage.setItem(SESSION_KEY, targetSessionId);
+    setSessionId(targetSessionId);
+    // History will be restored by the useEffect
   }, []);
 
   /**
@@ -202,11 +265,14 @@ export function useChat(): UseChatReturn {
     isRestoring,
     error,
     sessionId,
+    previousSessions,
     sendMessage,
     clearMessages,
     clearError,
     startNewChat,
+    switchToSession,
     restoreHistory,
+    loadSessions,
   };
 }
 

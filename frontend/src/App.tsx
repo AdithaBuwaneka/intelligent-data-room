@@ -13,9 +13,10 @@ import { useFileUpload } from './hooks/useFileUpload';
 import type { FileMetadata } from './types';
 
 function App() {
-  const { messages, isLoading, sessionId, sendMessage, startNewChat } = useChat();
+  const { messages, isLoading, sessionId, sendMessage, startNewChat, previousSessions, switchToSession, clearMessages } = useChat();
   const { file, isUploading, setFile, setIsUploading, setError, restoreFile, clearFile } = useFileUpload();
   const [showError, setShowError] = useState<string | null>(null);
+  const [showSessionMenu, setShowSessionMenu] = useState(false);
 
   // Restore file on mount (in case of browser refresh)
   useEffect(() => {
@@ -27,6 +28,25 @@ function App() {
     startNewChat();
     clearFile();
     setShowError(null);
+    setShowSessionMenu(false);
+  };
+
+  // Handle clearing current chat
+  const handleClearChat = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      await fetch(`${API_URL}/api/history/${sessionId}`, { method: 'DELETE' });
+      clearMessages();
+    } catch (err) {
+      console.error('Failed to clear chat:', err);
+    }
+  };
+
+  // Handle switching to a previous session
+  const handleSwitchSession = (targetSessionId: string) => {
+    switchToSession(targetSessionId);
+    setShowSessionMenu(false);
+    clearFile(); // Clear file - will be restored if exists for that session
   };
 
   // Handle file upload completion
@@ -75,33 +95,82 @@ function App() {
                 Intelligent Data Room
               </h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* New Chat Button */}
               <button
                 onClick={handleNewChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 title="Start a new chat session"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 New Chat
               </button>
+
+              {/* Clear Chat Button */}
+              {messages.length > 0 && (
+                <button
+                  onClick={handleClearChat}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                  title="Clear current chat"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Clear
+                </button>
+              )}
+
+              {/* Session History Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSessionMenu(!showSessionMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  title="View previous sessions"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
+                  {previousSessions.length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full">
+                      {previousSessions.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {showSessionMenu && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-2 border-b border-gray-100">
+                      <p className="text-xs font-medium text-gray-500 uppercase">Previous Sessions</p>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {previousSessions.length === 0 ? (
+                        <p className="p-4 text-sm text-gray-500 text-center">No previous sessions</p>
+                      ) : (
+                        previousSessions.map((session) => (
+                          <button
+                            key={session.sessionId}
+                            onClick={() => handleSwitchSession(session.sessionId)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                          >
+                            <p className="text-sm text-gray-900 truncate">{session.preview}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {session.messageCount} messages • {new Date(session.lastActivity).toLocaleDateString()}
+                            </p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <span className="text-xs text-gray-400">
                 Session: {sessionId.slice(0, 8)}...
               </span>
-              <div className="text-sm text-gray-500">
-                AI-Powered Data Analysis
-              </div>
             </div>
           </div>
         </div>

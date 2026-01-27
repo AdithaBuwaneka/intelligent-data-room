@@ -223,3 +223,68 @@ async def clear_chat_history(session_id: str):
             status_code=500,
             detail=f"Failed to clear chat history: {str(e)}",
         )
+
+
+@router.get("/sessions")
+async def list_sessions():
+    """
+    List all chat sessions.
+
+    Returns a list of sessions with their IDs, first message, and message count.
+    Sessions are ordered by most recent first.
+    """
+    try:
+        db = await get_database()
+
+        # Use aggregation to get unique sessions with their first message and count
+        pipeline = [
+            # Group by session_id
+            {
+                "$group": {
+                    "_id": "$session_id",
+                    "first_message": {"$first": "$content"},
+                    "first_timestamp": {"$min": "$timestamp"},
+                    "last_timestamp": {"$max": "$timestamp"},
+                    "message_count": {"$sum": 1},
+                    "first_role": {"$first": "$role"},
+                }
+            },
+            # Sort by last activity (most recent first)
+            {"$sort": {"last_timestamp": -1}},
+            # Limit to 20 sessions
+            {"$limit": 20},
+        ]
+
+        cursor = db.messages_collection.aggregate(pipeline)
+        sessions_data = await cursor.to_list(length=20)
+
+        sessions = []
+        for s in sessions_data:
+            # Get first user message for preview
+            first_user_msg = await db.messages_collection.find_one(
+                {"session_id": s["_id"], "role": "user"},
+                sort=[("timestamp", 1)]
+            )
+            
+            preview = first_user_msg["content"][:50] if first_user_msg else "No messages"
+            
+            sessions.append({
+                "session_id": s["_id"],
+                "preview": preview + ("..." if first_user_msg and len(first_user_msg["content"]) > 50 else ""),
+                "message_count": s["message_count"],
+                "created_at": s["first_timestamp"].isoformat(),
+                "last_activity": s["last_timestamp"].isoformat(),
+            })
+
+        return {
+            "sessions": sessions,
+            "count": len(sessions),
+        }
+
+    except Exception as e:
+        print(f"❌ List sessions error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list sessions: {str(e)}",
+        )
+
