@@ -5,8 +5,8 @@
  * Handles communication with the backend API.
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import type { Message, QueryResponse, FileMetadata } from '../types';
+import { useState, useCallback } from 'react';
+import type { Message, QueryResponse } from '../types';
 
 const SESSION_KEY = 'idr_session_id';
 
