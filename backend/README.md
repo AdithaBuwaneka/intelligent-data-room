@@ -1,10 +1,15 @@
-# Backend - Intelligent Data Room API
+---
+title: Intelligent Data Room
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
+# Intelligent Data Room API
 
 FastAPI backend with multi-agent AI system using LangGraph and PandasAI.
-
-## 🌐 Live API
-
-[huggingface.co/spaces/adithaf7/intelligent-data-room](https://huggingface.co/spaces/adithaf7/intelligent-data-room)
 
 ## 🏗️ Architecture
 
