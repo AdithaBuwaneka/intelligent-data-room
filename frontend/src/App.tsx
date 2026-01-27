@@ -220,6 +220,7 @@ function App() {
               onUploadStart={() => setIsUploading(true)}
               onUploadEnd={() => setIsUploading(false)}
               onError={handleError}
+              initialFile={file}
             />
 
             {/* Quick Start Guide */}
