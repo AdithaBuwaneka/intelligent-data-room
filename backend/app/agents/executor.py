@@ -190,22 +190,16 @@ class ExecutorAgent:
             )
 
             # Create enhanced prompt that includes the plan for context
-            # CRITICAL: Put restrictions at the TOP so LLM sees them first
             enhanced_prompt = f"""
-CRITICAL RESTRICTIONS (MUST FOLLOW):
-- ONLY use these modules: pandas, matplotlib.pyplot, numpy
-- DO NOT import: os, io, seaborn, sns, chr, b64decode, subprocess, sys
-- For charts: use matplotlib.pyplot ONLY (import matplotlib.pyplot as plt)
-- Save charts with: plt.savefig("temp_chart.png") - no os.makedirs needed
-- The chart directory already exists, just save directly
-
 Based on the following analysis plan:
 {plan}
 
 User Question: {question}
 
-IMPORTANT: You must write Python code using pandas and matplotlib only.
+IMPORTANT: You must write Python code using pandas operations to answer this question.
 Always return a concrete result (number, DataFrame, or value), never just an explanation.
+
+Note: Use matplotlib.pyplot for charts. Do not use os, io, or subprocess modules.
 """
 
             # Execute the query using PandasAI
