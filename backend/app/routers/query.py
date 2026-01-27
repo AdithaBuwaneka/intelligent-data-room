@@ -5,6 +5,7 @@ Handles chat queries using the multi-agent system (Planner + Executor).
 Includes intelligent query classification to handle greetings and casual chat.
 """
 
+import gc
 import time
 import pandas as pd
 import httpx
@@ -33,7 +34,7 @@ def get_workflow() -> AgentWorkflow:
 
 async def load_dataframe_from_url(file_url: str) -> pd.DataFrame:
     """
-    Load a DataFrame from a remote URL.
+    Load a DataFrame from a remote URL with memory optimization.
 
     Args:
         file_url: URL to the CSV/XLSX file
@@ -41,6 +42,7 @@ async def load_dataframe_from_url(file_url: str) -> pd.DataFrame:
     Returns:
         Pandas DataFrame
     """
+    content = None
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(file_url, timeout=30.0)
@@ -52,8 +54,8 @@ async def load_dataframe_from_url(file_url: str) -> pd.DataFrame:
             if file_url.lower().endswith(".xlsx") or file_url.lower().endswith(".xls"):
                 df = pd.read_excel(BytesIO(content))
             else:
-                # Default to CSV
-                df = pd.read_csv(BytesIO(content))
+                # Default to CSV with memory optimization
+                df = pd.read_csv(BytesIO(content), low_memory=True)
 
             return df
 
@@ -63,6 +65,11 @@ async def load_dataframe_from_url(file_url: str) -> pd.DataFrame:
             status_code=400,
             detail=f"Failed to load data file: {str(e)}",
         )
+    finally:
+        # Clean up response content from memory
+        if content is not None:
+            del content
+            gc.collect()
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -155,6 +162,10 @@ async def process_query(request: QueryRequest):
             chart_config=result["chart_config"],
         )
 
+        # Clean up DataFrame from memory
+        del df
+        gc.collect()
+
         execution_time = time.time() - start_time
         print(f"⏱️ Total execution time: {execution_time:.2f}s")
 
@@ -173,6 +184,9 @@ async def process_query(request: QueryRequest):
             status_code=500,
             detail=f"Failed to process query: {str(e)}",
         )
+    finally:
+        # Always clean up memory
+        gc.collect()
 
 
 @router.get("/history/{session_id}")
