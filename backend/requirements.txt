@@ -1,0 +1,27 @@
+# FastAPI and server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+
+# AI and LLM
+langgraph>=0.2.0
+google-generativeai>=0.7.0
+pandasai>=2.0.0
+
+# Data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+numpy>=1.24.0
+
+# Database
+pymongo>=4.6.0
+motor>=3.3.0
+
+# File storage (ImageKit)
+imagekitio>=4.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+httpx>=0.26.0
