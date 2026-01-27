@@ -61,6 +61,8 @@ class GeminiLLM(LLM):
             if suffix:
                 prompt = f"{prompt}\n\n{suffix}"
 
+            print(f"🔄 GeminiLLM.call() invoked, prompt length: {len(prompt)}")
+
             # Call Gemini API using the new SDK pattern
             response = self._client.models.generate_content(
                 model=self._model_name,
@@ -69,8 +71,10 @@ class GeminiLLM(LLM):
 
             # Extract text from response
             if response and response.text:
+                print(f"✅ GeminiLLM received response: {len(response.text)} chars")
                 return response.text
             else:
+                print("⚠️ GeminiLLM: No response text")
                 return "No response generated"
 
         except Exception as e:
@@ -207,11 +211,15 @@ Note: Use matplotlib.pyplot for charts. Do not use os, io, or subprocess modules
             result = agent.chat(enhanced_prompt)
             print(f"✅ PandasAI result type: {type(result)}")
 
+            # Log the actual result for debugging
+            if isinstance(result, str):
+                print(f"📝 PandasAI result content: {result[:500]}")
+
             # Check if PandasAI returned an error string (it catches exceptions internally)
             if isinstance(result, str) and (
                 "unfortunately" in result.lower() or
                 "no code found" in result.lower() or
-                "error" in result.lower()
+                ("error" in result.lower() and len(result) < 200)  # Only treat short error messages as errors
             ):
                 print(f"⚠️ PandasAI returned error string, using fallback")
                 fallback_config = self._generate_chart_config_fallback(plan, df, question)
