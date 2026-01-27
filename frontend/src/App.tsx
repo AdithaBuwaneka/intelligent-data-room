@@ -14,7 +14,7 @@ import type { FileMetadata } from './types';
 
 function App() {
   const { messages, isLoading, sessionId, sendMessage, startNewChat } = useChat();
-  const { file, isUploading, isRestoring, setFile, setIsUploading, setError, restoreFile, clearFile } = useFileUpload();
+  const { file, isUploading, setFile, setIsUploading, setError, restoreFile, clearFile } = useFileUpload();
   const [showError, setShowError] = useState<string | null>(null);
 
   // Restore file on mount (in case of browser refresh)
