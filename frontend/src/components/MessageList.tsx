@@ -125,7 +125,7 @@ function MessageBubble({ message }: { message: Message }) {
                   : 'message-assistant'
               }
             >
-              <p className="whitespace-pre-wrap break-words">{filterChartPaths(message.content)}</p>
+              <p className="whitespace-nowrap-for-short">{filterChartPaths(message.content)}</p>
             </div>
 
             {/* Execution plan (collapsible) */}

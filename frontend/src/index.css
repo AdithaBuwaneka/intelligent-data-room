@@ -59,11 +59,22 @@ body {
   }
 
   .message-user {
-    @apply bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-2 max-w-[80%];
+    @apply bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-2;
+    max-width: 80%;
+    width: fit-content;
+    word-wrap: break-word;
   }
 
   .message-assistant {
-    @apply bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md px-4 py-2 max-w-[80%];
+    @apply bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md px-4 py-2;
+    max-width: 80%;
+    width: fit-content;
+    word-wrap: break-word;
+  }
+
+  .whitespace-nowrap-for-short {
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 
