@@ -73,6 +73,9 @@ git push hf main
 Name: GEMINI_API_KEY
 Value: [your Google Gemini API key]
 
+Name: MONGODB_URI
+Value: [your MongoDB Atlas connection string]
+
 Name: IMAGEKIT_PRIVATE_KEY
 Value: [your ImageKit private key]
 
@@ -87,6 +90,11 @@ Value: *
 ```
 
 4. Click "Save" for each secret
+
+⚠️ **MONGODB_URI is REQUIRED** - Without it, the application will fail. Get it from MongoDB Atlas:
+- Go to MongoDB Atlas → Clusters → Connect
+- Select "Drivers" → Python → Copy connection string
+- Replace `<password>` with your database password
 
 ### **Step 6: Wait for Build**
 - HF will automatically build your Docker image
@@ -129,16 +137,33 @@ When prompted:
 
 ## 🔧 Troubleshooting
 
+### Container exits with code 137?
+This means **Out of Memory (OOM)** - the container was killed due to insufficient memory.
+
+**Solutions:**
+1. **Check MongoDB URI** - Make sure `MONGODB_URI` is set correctly in secrets
+2. **Reduce context window** - In Space settings, add: `MAX_CONTEXT_MESSAGES=3`
+3. **Check API keys** - Verify all secrets are set (missing keys can cause startup issues)
+4. **Restart Space** - Go to Settings → "Factory reboot"
+5. **Check logs** - Space → "Logs" tab for detailed error messages
+
 ### Build fails?
 Check logs in HF Space → "Logs" tab. Common issues:
 - Missing `Dockerfile` → Make sure it's in root
 - Wrong SDK → Must be "Docker" not "Gradio"
 - Port issue → Must use port 7860
 
+### Application starts but crashes immediately?
+- **Missing environment variables** → Check all secrets are set (especially `MONGODB_URI`)
+- **Invalid MongoDB URI** → Verify connection string includes credentials and database name
+- **Database connection timeout** → Check MongoDB Atlas allows HF Spaces IP (use 0.0.0.0/0 for testing)
+- **Memory issue** → Reduce `MAX_CONTEXT_MESSAGES` in settings
+
 ### API not responding?
 - Check secrets are set correctly
-- View logs for errors
+- View logs for errors: Space → "Logs" tab
 - Restart Space: Settings → "Factory reboot"
+- Test the health endpoint: `https://YOUR_USERNAME-intelligent-data-room.hf.space/health`
 
 ### CORS errors from frontend?
 Add to secrets:

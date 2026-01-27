@@ -22,6 +22,11 @@ AI-powered data analysis platform with multi-agent architecture. Upload CSV/XLSX
 - **Health Check:** [adithaf7-intelligent-data-room.hf.space/health](https://adithaf7-intelligent-data-room.hf.space/health)
 - **GitHub Repo:** [github.com/AdithaBuwaneka/intelligent-data-room](https://github.com/AdithaBuwaneka/intelligent-data-room)
 
+**📚 Deployment Guides:**
+- [Deploy to Hugging Face Spaces (Backend)](README_HUGGINGFACE.md)
+- [MongoDB Atlas Setup Guide](MONGODB_SETUP.md)
+- [Deployment Checklist](HF_DEPLOYMENT_CHECKLIST.md)
+
 ---
 
 ## 🎯 Features
@@ -85,16 +90,20 @@ AI-powered data analysis platform with multi-agent architecture. Upload CSV/XLSX
 ## 🚀 Quick Start
 
 ### Prerequisites
-Python 3.11+, Node.js 18+, MongoDB URL, Gemini API Key, ImageKit credentials
+- Python 3.11+
+- Node.js 18+
+- **MongoDB Atlas URI** (see [MONGODB_SETUP.md](MONGODB_SETUP.md))
+- **Gemini API Key** (Google AI Studio)
+- **ImageKit credentials** (public/private keys + URL endpoint)
 
 ### Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
 
-# Environment variables
+# Environment variables (create .env file or export)
 export GEMINI_API_KEY="your-gemini-api-key"
-export MONGODB_URL="mongodb+srv://..."
+export MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/dbname?retryWrites=true&w=majority"
 export IMAGEKIT_PUBLIC_KEY="your-public-key"
 export IMAGEKIT_PRIVATE_KEY="your-private-key"
 export IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/your-id"
