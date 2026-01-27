@@ -23,6 +23,15 @@ function App() {
     restoreFile(sessionId);
   }, [sessionId, restoreFile]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowSessionMenu(false);
+    if (showSessionMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showSessionMenu]);
+
   // Handle starting a new chat
   const handleNewChat = () => {
     startNewChat();
@@ -46,7 +55,7 @@ function App() {
   const handleSwitchSession = (targetSessionId: string) => {
     switchToSession(targetSessionId);
     setShowSessionMenu(false);
-    clearFile(); // Clear file - will be restored if exists for that session
+    clearFile();
   };
 
   // Handle file upload completion
@@ -72,69 +81,68 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Intelligent Data Room
-              </h1>
+              <div>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Intelligent Data Room
+                </h1>
+                <p className="text-xs text-gray-500 hidden sm:block">AI-Powered Data Analysis</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* New Chat Button */}
               <button
                 onClick={handleNewChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                title="Start a new chat session"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                title="New chat"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                New Chat
+                <span className="hidden sm:inline">New</span>
               </button>
 
-              {/* Clear Chat Button */}
+              {/* Clear Chat Button - only show if messages exist */}
               {messages.length > 0 && (
                 <button
                   onClick={handleClearChat}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                  title="Clear current chat"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                  title="Clear chat"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Clear
+                  <span className="hidden sm:inline">Clear</span>
                 </button>
               )}
 
               {/* Session History Dropdown */}
               <div className="relative">
                 <button
-                  onClick={() => setShowSessionMenu(!showSessionMenu)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                  title="View previous sessions"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSessionMenu(!showSessionMenu);
+                  }}
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  title="Chat history"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  History
+                  <span className="hidden sm:inline">History</span>
                   {previousSessions.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full">
+                    <span className="ml-0.5 sm:ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full">
                       {previousSessions.length}
                     </span>
                   )}
@@ -142,21 +150,30 @@ function App() {
 
                 {/* Dropdown Menu */}
                 {showSessionMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-2 border-b border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 uppercase">Previous Sessions</p>
+                  <div 
+                    className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">Chat History</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Switch to a previous conversation</p>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {previousSessions.length === 0 ? (
-                        <p className="p-4 text-sm text-gray-500 text-center">No previous sessions</p>
+                        <div className="p-6 text-center">
+                          <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          <p className="text-sm text-gray-500">No previous chats</p>
+                        </div>
                       ) : (
                         previousSessions.map((session) => (
                           <button
                             key={session.sessionId}
                             onClick={() => handleSwitchSession(session.sessionId)}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
                           >
-                            <p className="text-sm text-gray-900 truncate">{session.preview}</p>
+                            <p className="text-sm text-gray-900 truncate font-medium">{session.preview}</p>
                             <p className="text-xs text-gray-400 mt-1">
                               {session.messageCount} messages • {new Date(session.lastActivity).toLocaleDateString()}
                             </p>
@@ -167,10 +184,6 @@ function App() {
                   </div>
                 )}
               </div>
-
-              <span className="text-xs text-gray-400">
-                Session: {sessionId.slice(0, 8)}...
-              </span>
             </div>
           </div>
         </div>
@@ -182,25 +195,14 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-red-700">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
+                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <span className="text-sm">{showError}</span>
               </div>
-              <button
-                onClick={() => setShowError(null)}
-                className="text-red-700 hover:text-red-900"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
+              <button onClick={() => setShowError(null)} className="text-red-700 hover:text-red-900 p-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
             </div>
@@ -209,10 +211,10 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-          {/* Sidebar - File Upload */}
-          <div className="lg:col-span-1">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Sidebar - File Upload & Info */}
+          <div className="lg:col-span-1 space-y-4">
             <FileUpload
               onFileUploaded={handleFileUploaded}
               sessionId={sessionId}
@@ -222,42 +224,30 @@ function App() {
               onError={handleError}
             />
 
-            {/* Info Card */}
-            <div className="card p-6 mt-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">
-                How it works
-              </h3>
-              <ul className="space-y-3 text-sm text-gray-600">
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    1
-                  </span>
-                  <span>Upload your CSV or XLSX file</span>
+            {/* Quick Start Guide */}
+            <div className="card p-4 sm:p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Start</h3>
+              <ol className="space-y-2.5 text-sm text-gray-600">
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                  <span>Upload a CSV or Excel file</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    2
-                  </span>
-                  <span>Ask questions in natural language</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                  <span>Ask questions in plain English</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    3
-                  </span>
-                  <span>AI analyzes and visualizes results</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                  <span>Get instant insights & charts</span>
                 </li>
-              </ul>
+              </ol>
 
-              {/* Agent Info */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Powered by Multi-Agent System:</p>
-                <div className="flex gap-2">
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                    Planner Agent
-                  </span>
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                    Executor Agent
-                  </span>
+              {/* Example queries */}
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-xs font-medium text-gray-500 mb-2">Example questions:</p>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-gray-500 italic">"Show total sales by category"</p>
+                  <p className="text-xs text-gray-500 italic">"Which region has the highest profit?"</p>
                 </div>
               </div>
             </div>
@@ -276,10 +266,10 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-sm text-gray-500">
-            Powered by LangGraph + PandasAI + Google Gemini | Built for GenAI Challenge
+      <footer className="border-t border-gray-200 bg-white py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-xs text-gray-400">
+            Powered by Google Gemini AI • Multi-Agent System
           </p>
         </div>
       </footer>

@@ -153,8 +153,8 @@ class ExecutorAgent:
                 f"Please check your GEMINI_API_KEY. Error: {error_detail}"
             )
 
-        # Chart export directory
-        self.chart_dir = "exports/charts"
+        # Chart export directory (temporary storage for generated charts)
+        self.chart_dir = "temp_charts"
         os.makedirs(self.chart_dir, exist_ok=True)
 
     async def execute_plan(

@@ -61,11 +61,11 @@ export function ChatInterface({
   };
 
   return (
-    <div className="card h-[600px] flex flex-col">
+    <div className="card h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100">
-        <h2 className="text-lg font-medium text-gray-900">Chat with your Data</h2>
-        <p className="text-sm text-gray-500">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+        <h2 className="text-base sm:text-lg font-medium text-gray-900">Chat with your Data</h2>
+        <p className="text-xs sm:text-sm text-gray-500 truncate">
           {fileUploaded
             ? `Analyzing: ${fileUploaded.filename}`
             : 'Upload a file to start asking questions'}
@@ -73,7 +73,7 @@ export function ChatInterface({
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {messages.length === 0 && fileUploaded && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="text-center mb-6">
