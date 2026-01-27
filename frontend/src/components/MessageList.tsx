@@ -80,10 +80,13 @@ function filterChartPaths(content: string): string {
     if (/^(temp_charts|charts|exports)?[\\\/]?[\w-]+\.(png|jpg|jpeg|svg)$/i.test(trimmed)) {
       return false;
     }
+    // Filter out empty lines if they're consecutive
     return true;
   });
   
-  return filteredLines.join('\n').trim();
+  const result = filteredLines.join('\n').trim();
+  // If result is empty or just whitespace, return a single space to avoid rendering issues
+  return result || content;
 }
 
 /**

@@ -16,62 +16,64 @@ QueryType = Literal["DATA_QUESTION", "GREETING", "CHITCHAT", "UNCLEAR"]
 
 
 # System prompt for the classifier
-CLASSIFIER_SYSTEM_PROMPT = """You are a Query Classifier for a Data Analysis chatbot. Your job is to determine if a user message is asking about data/analysis OR if it's just casual conversation.
+CLASSIFIER_SYSTEM_PROMPT = """You are an intelligent Query Classifier for a Data Analysis chatbot. Analyze the user's intent to determine if they want data analysis or casual conversation.
 
 ## Classification Categories:
 
-1. **DATA_QUESTION** - User wants to analyze, query, or understand their uploaded data
-   Examples:
-   - "What is the total sales?"
-   - "Show me top 5 products"
-   - "Calculate average revenue by region"
-   - "Create a chart of monthly trends"
-   - "How many rows have missing values?"
-   - "What columns are in the data?"
-   - "Compare Q1 vs Q2 performance"
+1. **DATA_QUESTION** - Any request about data, analysis, or information
+   - Direct data queries: "total sales", "top products", "average by region"
+   - Data exploration: "show columns", "how many rows", "what's in the data"
+   - Visualization: "create chart", "plot trends", "visualize distribution"
+   - Calculations: "sum", "average", "count", "percentage"
+   - Comparisons: "compare X vs Y", "highest", "lowest", "difference"
+   - Follow-ups after data analysis: "by region?", "as a chart", "top 10", "sort by"
+   
+2. **GREETING** - Pure social greetings with no request for action
+   - Any form of hello/hi: "hi", "hello", "hey", "yo", "sup", "hiya", "greetings"
+   - Time-based greetings: "good morning/afternoon/evening/night"
+   - Informal greetings: "howdy", "what's up", "wassup"
+   - IMPORTANT: If there's NO data analysis in conversation history, classify as GREETING
+   - If there IS data analysis history, even "hi" should be UNCLEAR (might be follow-up)
 
-   IMPORTANT - Follow-up questions are also DATA_QUESTION:
-   - "What about by region?" (follow-up to previous analysis)
-   - "Show me that as a chart"
-   - "Now filter by category"
-   - "And the average?"
-   - "Break it down by month"
-   - "Sort by highest"
-   - "Top 10 instead"
+3. **CHITCHAT** - Personal/off-topic conversation with no data request
+   - Personal questions: "how are you", "what's your name", "who made you"
+   - Capabilities: "what can you do", "help me", "tell me about yourself"  
+   - Social: "thanks", "thank you", "nice", "cool", "awesome"
+   - Off-topic: "joke", "weather", "news", random topics
+   - IMPORTANT: If NO data analysis history, classify as CHITCHAT
+   - If there IS data analysis history, be cautious - might be DATA_QUESTION
 
-2. **GREETING** - Simple greetings or salutations (ONLY when NO previous data conversation)
-   Examples:
-   - "Hi", "Hello", "Hey"
-   - "Good morning", "Good evening"
-   - "Hi there", "Howdy"
+4. **UNCLEAR** - Ambiguous messages that could be either
+   - Single words that could be column names OR greetings
+   - Vague phrases like "more", "that", "other"
+   - Unclear context without history
 
-3. **CHITCHAT** - Casual conversation, personal questions, or off-topic messages (ONLY when clearly NOT about data)
-   Examples:
-   - "How are you?"
-   - "What's your name?"
-   - "Tell me a joke"
-   - "What can you do?"
-   - "Thanks", "Thank you"
-   - "Nice weather today"
-   - "Who created you?"
+## CRITICAL INTELLIGENCE RULES:
 
-4. **UNCLEAR** - Message is ambiguous and could go either way
-   Examples:
-   - Single word that could be a column name or greeting
-   - Incomplete sentences
+**Context Analysis:**
+- If conversation history contains "[executed data analysis]" or "[created chart]":
+  → User is in DATA MODE → Most messages are likely DATA_QUESTION
+  → Even casual-sounding words might be follow-ups
+  
+- If conversation history is empty or only has casual chat:
+  → User is in CASUAL MODE → Greetings/chitchat are likely
 
-## CRITICAL RULES:
-- If conversation history shows "[DATA ANALYSIS SESSION]" or "[executed data analysis]" or "[created chart]", then ANY short follow-up message is almost certainly DATA_QUESTION
-- ANY question after a data analysis response = DATA_QUESTION (e.g., "What about X?", "And by region?", "Show me that", "Top 5", "Break it down")
-- Short questions/commands after data results = DATA_QUESTION (e.g., "as a chart", "by month", "sort it", "filter by X", "top 10 instead")
-- When in doubt, ALWAYS classify as DATA_QUESTION
-- Only classify as GREETING if it's a clear greeting like "Hi", "Hello" AND there is NO data analysis history
-- Only classify as CHITCHAT if it's clearly personal/off-topic AND there is NO data analysis history
+**Intent Recognition:**
+- Focus on INTENT, not exact words
+- "hi" at conversation start = GREETING
+- "hi" after data analysis = Could be greeting OR continuation → UNCLEAR
+- "how are you" with no context = CHITCHAT  
+- "what can you do" with data context = Could ask about data capabilities → UNCLEAR
 
-## Instructions:
-- Respond with ONLY ONE of these exact words: DATA_QUESTION, GREETING, CHITCHAT, or UNCLEAR
-- No explanation, no extra text, just the classification
-- When in doubt between DATA_QUESTION and others, ALWAYS lean towards DATA_QUESTION
+**Smart Classification:**
+- Use semantic understanding, not keyword matching
+- Recognize variations: "hiii", "helllllo", "heya", "sup fam"
+- Understand slang, abbreviations, typos
+- Consider tone and casualness
+
+## Output Format:
+Respond with ONLY ONE word: DATA_QUESTION, GREETING, CHITCHAT, or UNCLEAR
+No explanation. Just the classification.
 """
 
 
@@ -92,28 +94,38 @@ class QueryClassifier:
 
     async def classify(self, question: str, context: str = "") -> QueryType:
         """
-        Classify the user's question with conversation context.
+        Classify the user's question intelligently using AI.
 
         Args:
             question: User's input message
-            context: Previous conversation context for follow-up detection
+            context: Previous conversation context for intent analysis
 
         Returns:
             QueryType: DATA_QUESTION, GREETING, CHITCHAT, or UNCLEAR
         """
-        # Build the classification prompt with context
+        # Build the classification prompt with context awareness
         context_section = ""
         if context and context != "No previous conversation context.":
             context_section = f"""
-## Recent Conversation History:
+## Conversation Context:
 {context}
 
-NOTE: If there was recent data analysis discussion, short follow-up messages are likely DATA_QUESTION.
+**Analysis**: This conversation has history. Consider whether the user is continuing 
+a data analysis session or starting fresh casual conversation.
+"""
+        else:
+            context_section = """
+## Conversation Context:
+No previous conversation.
+
+**Analysis**: This is the start of the conversation. Pure greetings and chitchat 
+are more likely unless the message explicitly asks about data.
 """
 
         prompt = f"""{CLASSIFIER_SYSTEM_PROMPT}
 {context_section}
-User message: "{question}"
+
+User Message: "{question}"
 
 Classification:"""
 
@@ -125,23 +137,39 @@ Classification:"""
 
             result = response.text.strip().upper()
 
-            # Validate and return the classification
-            if "DATA_QUESTION" in result:
+            # Parse the classification intelligently
+            if "DATA_QUESTION" in result or "DATA" in result:
                 return "DATA_QUESTION"
             elif "GREETING" in result:
                 return "GREETING"
-            elif "CHITCHAT" in result:
+            elif "CHITCHAT" in result or "CHIT" in result:
                 return "CHITCHAT"
             elif "UNCLEAR" in result:
                 return "UNCLEAR"
             else:
-                # Default to DATA_QUESTION if response is unexpected
-                print(f"⚠️ Unexpected classifier response: {result}, defaulting to DATA_QUESTION")
+                # If AI response is unexpected, analyze the question ourselves as fallback
+                print(f"⚠️ Unexpected classifier response: {result}")
+                question_lower = question.lower().strip()
+                
+                # Very basic fallback - single word likely greeting if no context
+                if len(question_lower.split()) == 1 and not context:
+                    if len(question_lower) < 15:  # Short single words
+                        return "GREETING"
+                
+                # Default to DATA_QUESTION for safety
                 return "DATA_QUESTION"
 
         except Exception as e:
             print(f"❌ Classifier error: {e}")
-            # On error, default to DATA_QUESTION to not break functionality
+            # On error, analyze the question with basic heuristics
+            question_lower = question.lower().strip()
+            
+            # Very short messages without context are likely greetings
+            if not context and len(question_lower) < 20 and "?" not in question_lower:
+                if any(word in question_lower for word in ["hi", "hello", "hey", "morning", "evening"]):
+                    return "GREETING"
+            
+            # Default to DATA_QUESTION to maintain functionality
             return "DATA_QUESTION"
 
     def get_friendly_response(self, query_type: QueryType, question: str) -> str:
