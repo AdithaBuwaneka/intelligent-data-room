@@ -160,42 +160,44 @@ Return FALSE if:
 - Question is about data not in the dataset
 - Question is unrelated to data (e.g., "weather today", "who is president")
 
-### 3. requires_visualization (USE SEMANTIC UNDERSTANDING!)
+### 3. requires_visualization (CRITICAL RULES!)
 
-**Understand the user's INTENT - do they want to SEE something visually, or just GET information?**
+**AUTOMATIC TRUE - If ANY of these words appear in the query, ALWAYS return TRUE:**
+- "chart" (bar chart, pie chart, chart of, chart the, any chart)
+- "graph" (graph of, graph the, make a graph)
+- "plot" (plot of, scatter plot, line plot)
+- "visualize" (visualize, visualization)
+- "graphical" (graphical representation)
+- "diagram" (diagram of)
+- "draw" (draw a chart, draw the)
+- "pie" (pie chart)
+- "bar" (bar chart)
+- "line chart" or "line graph"
+- "scatter" (scatter plot)
 
-**Return TRUE when user's intent is VISUAL OUTPUT:**
-The user is asking you to CREATE a visual representation. They want to SEE a picture/graph/chart.
-Semantic meanings that indicate visual intent:
-- Requesting creation of visual elements (charts, graphs, plots, diagrams)
-- Wanting to "see" data in graphical form
-- Asking for visual comparison or visual display
-- Follow-up requests to change chart type
-- Any intent where the output should be an IMAGE, not text
+**Examples that MUST return TRUE:**
+- "Chart the distribution of discounts" → TRUE (contains "chart")
+- "Create a bar chart of sales" → TRUE (contains "chart")
+- "Graphical representation of categories" → TRUE (contains "graphical")
+- "Display a graph of profit" → TRUE (contains "graph")
+- "Plot sales trend" → TRUE (contains "plot")
+- "Pie chart of regions" → TRUE (contains "pie chart")
+- "Visualize profit by segment" → TRUE (contains "visualize")
 
-**Return FALSE when user's intent is INFORMATION/DATA:**
-The user wants to KNOW something or GET a value. They want text/numbers as the answer.
-Semantic meanings that indicate information intent:
-- Asking questions (what, how many, which, who, why)
-- Requesting calculations (total, average, sum, count, maximum)
-- Wanting lists or rankings (top 5, bottom 10, list of)
-- Asking about trends or changes (in words, not pictures)
-- Data exploration (what columns, describe data, summary)
-- Comparisons described in words
+**Return FALSE ONLY when:**
+- User asks a question (what, how many, which, who)
+- User wants calculations (total, average, sum, count)
+- User wants lists or rankings described in TEXT
+- User says "show me" WITHOUT chart/graph/visual words
+- User wants to KNOW information, not SEE a picture
 
-**CRITICAL DISTINCTION:**
-- "Show me the top 5 products" → User wants to KNOW which are top 5 → FALSE
-- "Show me a chart of top 5 products" → User wants to SEE a chart → TRUE
-- "What is sales by region?" → User wants to KNOW the breakdown → FALSE  
-- "Visualize sales by region" → User wants to SEE it visually → TRUE
-- "How did profit change?" → User wants to KNOW (describe) → FALSE
-- "Plot the profit trend" → User wants to SEE it → TRUE
+**Examples that return FALSE:**
+- "What is total sales?" → FALSE (question, wants number)
+- "Show me top 5 products" → FALSE (wants text list)
+- "How did profit change?" → FALSE (question, wants explanation)
+- "List the categories" → FALSE (wants text list)
 
-**The word "show" is ambiguous - understand context:**
-- "show me" often means "tell me" → FALSE
-- "show me a chart/graph" clearly means visual → TRUE
-
-**When uncertain:** Default to FALSE (give text answer). User can ask for chart if they want one.
+**CRITICAL RULE: The word "chart", "graph", "plot", "visualize", or "graphical" appearing ANYWHERE in the query = TRUE**
 
 ### 4. chart_type (only if requires_visualization is true)
 - "bar": comparisons, top N, rankings, categories

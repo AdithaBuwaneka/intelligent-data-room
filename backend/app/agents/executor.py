@@ -562,7 +562,15 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
 
             # Sort and limit
             agg_result = agg_result.sort_values(ascending=sort_ascending).head(limit)
-            agg_data = agg_result.reset_index()
+            
+            # Handle reset_index carefully to avoid duplicate column names
+            # When group_col == value_col (e.g., counting Category by Category),
+            # we need to rename the value column to avoid conflict
+            if group_col == value_col:
+                # Use reset_index with a different name for the value column
+                agg_data = agg_result.reset_index(name=f"{value_col}_count")
+            else:
+                agg_data = agg_result.reset_index()
 
             print(f"📊 Generated chart data: {len(agg_data)} rows (limit: {limit})")
             return agg_data.to_dict(orient="records")
