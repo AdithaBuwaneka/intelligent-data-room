@@ -36,30 +36,26 @@ Create a structured plan with these sections:
 
 **OUTPUT FORMAT:** [Describe what the final answer should look like]
 
-## Visualization Decision (USE SEMANTIC UNDERSTANDING!):
+## Visualization Decision (CRITICAL RULES!):
 
-**Understand user's TRUE INTENT - Do they want to SEE a visual, or KNOW information?**
+**AUTOMATIC YES - If ANY of these words appear in the query, ALWAYS say VISUALIZATION: YES:**
+- "chart", "graph", "plot", "visualize", "visualization", "graphical", "diagram", "pie", "bar", "scatter", "line chart"
 
-**VISUALIZATION: YES - when user intends to create visual output:**
-Their goal is to SEE something graphically. They want an image/chart/graph as output.
-- They're requesting creation of visual elements
-- They want to view data in picture/graphical form
-- They explicitly mention wanting to see charts, graphs, plots, diagrams
+**Examples that MUST be VISUALIZATION: YES:**
+- "Chart the distribution of discounts" → YES
+- "Create a bar chart of sales" → YES
+- "Graphical representation of categories" → YES
+- "Plot sales trend" → YES
+- "Pie chart of regions" → YES
 
-**VISUALIZATION: NO - when user intends to get information:**
-Their goal is to KNOW something or GET a value. They want text/numbers as answer.
-- They're asking questions (what is, how many, which one, who)
-- They want calculations (totals, averages, sums, counts)
-- They want lists or rankings described
-- They want to understand trends or changes (described in words)
-- They're exploring the data structure
-
-**The word "show" is ambiguous - understand from context:**
-- "show me the top 5" = tell me which are top 5 = NO
-- "show me a chart of the top 5" = display a chart = YES
+**VISUALIZATION: NO ONLY when:**
+- User asks questions (what, how many, which)
+- User wants calculations (total, average, sum)
+- User wants text lists (top 5, list the, show me)
+- NO chart/graph/plot words in query
 
 **When QueryAnalysis is provided:** Follow its requires_visualization field exactly.
-**When uncertain:** Default to NO. User can ask for chart explicitly if they want one.
+**CRITICAL RULE: The word "chart", "graph", "plot", "visualize", or "graphical" appearing ANYWHERE in the query = VISUALIZATION: YES**
 
 ## Guidelines:
 - Be specific about column names (use exact names from schema)
