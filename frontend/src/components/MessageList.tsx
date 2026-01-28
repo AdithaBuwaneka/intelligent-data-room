@@ -5,7 +5,7 @@
  * Supports rendering execution plans and chart data.
  */
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { Message } from '../types';
 import { TypingIndicator } from './LoadingSpinner';
 import ChartDisplay from './ChartDisplay';
@@ -90,6 +90,76 @@ function filterChartPaths(content: string): string {
 }
 
 /**
+ * Format message content with rich styling for lists, rankings, and data
+ */
+function formatMessageContent(content: string): React.ReactNode {
+  if (!content) return <span>{content}</span>;
+  
+  const filteredContent = filterChartPaths(content);
+  const lines = filteredContent.split('\n');
+  
+  return (
+    <div className="space-y-1">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        
+        if (!trimmed) return <div key={index} className="h-1" />;
+        
+        // Header lines ending with colon
+        if (trimmed.endsWith(':') && trimmed.length < 60 && !trimmed.includes(' - ')) {
+          return (
+            <div key={index} className="font-semibold text-gray-800 mt-2 first:mt-0">
+              {trimmed}
+            </div>
+          );
+        }
+        
+        // Bullet points with values (- Item: value)
+        if (trimmed.startsWith('- ')) {
+          const itemContent = trimmed.slice(2);
+          const colonIndex = itemContent.lastIndexOf(':');
+          
+          if (colonIndex > 0 && colonIndex < itemContent.length - 1) {
+            const name = itemContent.slice(0, colonIndex).trim();
+            const value = itemContent.slice(colonIndex + 1).trim();
+            
+            return (
+              <div key={index} className="flex items-center gap-2 py-1.5 px-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-100">
+                <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                <span className="flex-1 text-gray-700 truncate font-medium" title={name}>{name}</span>
+                <span className="font-mono text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded">{value}</span>
+              </div>
+            );
+          }
+          
+          return (
+            <div key={index} className="flex items-center gap-2 py-1">
+              <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+              <span className="text-gray-700">{itemContent}</span>
+            </div>
+          );
+        }
+        
+        // Numbered list (1. Item)
+        const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+        if (numberedMatch) {
+          return (
+            <div key={index} className="flex items-center gap-2 py-1">
+              <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                {numberedMatch[1]}
+              </span>
+              <span className="text-gray-700">{numberedMatch[2]}</span>
+            </div>
+          );
+        }
+        
+        return <div key={index} className="text-gray-700">{trimmed}</div>;
+      })}
+    </div>
+  );
+}
+
+/**
  * Individual message bubble component
  */
 function MessageBubble({ message }: { message: Message }) {
@@ -125,7 +195,11 @@ function MessageBubble({ message }: { message: Message }) {
                   : 'message-assistant'
               }
             >
-              <p className="whitespace-nowrap-for-short">{filterChartPaths(message.content)}</p>
+              {isUser ? (
+                <p className="whitespace-nowrap-for-short">{message.content}</p>
+              ) : (
+                formatMessageContent(message.content)
+              )}
             </div>
 
             {/* Execution plan (collapsible) */}
