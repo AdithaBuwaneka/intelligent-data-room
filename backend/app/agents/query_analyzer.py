@@ -165,11 +165,17 @@ Return TRUE for:
 
 **IMPORTANT: A standalone number like "5" or "10" IS meaningful if previous context had a limit query!**
 
-### 2. can_be_answered
+### 2. can_be_answered (STRICT VALIDATION)
 Return FALSE if:
 - Required columns don't exist in schema
-- Question is about data not in the dataset
-- Question is unrelated to data (e.g., "weather today", "who is president")
+- The specific entity asked for DOES NOT exist as a column in the schema.
+- Question is unrelated to data requests (e.g., "weather today", "who is president")
+
+**ANTI-HALLUCINATION RULES:**
+- If user asks for "employees" and you only see "Customer Name", return FALSE. Do NOT assume Customers = Employees.
+- If user asks for "stock/inventory" and you only see "Sales", return FALSE. Do NOT assume Sales = Stock.
+- If user asks for "competitor data" and it's not in schema, return FALSE.
+- **When specific columns are missing, return FALSE rather than trying to use a proxy.**
 
 ### 3. requires_visualization (CRITICAL RULES!)
 

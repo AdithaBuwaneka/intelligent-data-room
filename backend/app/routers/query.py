@@ -239,6 +239,37 @@ async def process_query(request: QueryRequest):
                 execution_time=execution_time,
             )
 
+        # FILTER: If query cannot be answered (missing columns/data), return early
+        if not query_analysis.can_be_answered:
+            response_msg = query_analysis.error_message or (
+                "I cannot answer this question because the necessary data is missing from the uploaded file."
+            )
+            
+            # Save messages
+            await memory.save_message(
+                session_id=request.session_id,
+                role="user",
+                content=request.question,
+            )
+            await memory.save_message(
+                session_id=request.session_id,
+                role="assistant",
+                content=response_msg,
+                plan=None,
+                chart_config=None,
+            )
+            
+            del df
+            gc.collect()
+            
+            execution_time = time.time() - start_time
+            return QueryResponse(
+                answer=response_msg,
+                plan=None,
+                chart_config=None,
+                execution_time=execution_time,
+            )
+
         # Save user message
         await memory.save_message(
             session_id=request.session_id,
