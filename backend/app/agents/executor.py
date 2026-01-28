@@ -558,13 +558,17 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
                 # Safe check: ensure column exists and has string representation
                 col_has_val = False
                 if group_col in df.columns:
-                     col_has_val = df[group_col].astype(str).str.contains(str(sample_val), case=False, regex=False).any()
+                     # Use ISIN for stricter checking - contains is too loose (e.g. "West" matches "West Jordan")
+                     col_has_val = df[group_col].astype(str).str.lower().isin([str(v).lower() for v in filter_vals]).any()
                 
                 if not col_has_val:
                     print(f"📊 Filter values {filter_vals} don't match group column {group_col}")
                     # Search for the correct column in categorical columns
                     for col in cat_cols:
-                        if df[col].astype(str).str.contains(str(sample_val), case=False, regex=False).any():
+                         # Skip if it's the group col (we already checked it)
+                        if col == group_col:
+                            continue
+                        if df[col].astype(str).str.lower().isin([str(v).lower() for v in filter_vals]).any():
                             filter_col = col
                             print(f"📊 Found matching filter column: {filter_col}")
                             break
