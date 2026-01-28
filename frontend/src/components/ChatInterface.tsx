@@ -35,7 +35,6 @@ function generateDynamicPrompts(columns: string[]): string[] {
   }
 
   const prompts: string[] = [];
-  const colLower = columns.map(c => c.toLowerCase());
 
   // Find potential categorical columns (common patterns)
   const categoryPatterns = ['category', 'type', 'region', 'state', 'country', 'segment', 'department', 'status', 'company', 'name'];
