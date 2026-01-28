@@ -324,7 +324,7 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
             # Generate title
             title = self._generate_chart_title(question)
 
-            # Check for horizontal layout
+            # Check for layout (initialize to None)
             layout = None
             if chart_type == "bar":
                 question_lower = question.lower()
@@ -585,9 +585,36 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
                 
                 if filter_col:
                     print(f"📊 Applying filter: {filter_col} in {filter_vals}")
-                    # Case-insensitive filtering
-                    mask = df[filter_col].astype(str).str.lower().isin([str(v).lower() for v in filter_vals])
-                    working_df = df[mask]
+                    
+                    # DATE HANDLING: Check if filtering by Year on a Date column
+                    is_date_col = False
+                    try:
+                        # Check if column is datetime or convertible
+                        if pd.api.types.is_datetime64_any_dtype(df[filter_col]):
+                            is_date_col = True
+                        else:
+                            # Try simple check on first non-null
+                            start_val = df[filter_col].dropna().iloc[0] if not df[filter_col].dropna().empty else ""
+                            if isinstance(start_val, str) and re.match(r'\d{1,2}/\d{1,2}/\d{4}', str(start_val)):
+                                is_date_col = True
+                    except:
+                        pass
+
+                    # Check if filters look like years (4 digits)
+                    filters_are_years = all(str(v).isdigit() and len(str(v)) == 4 for v in filter_vals) if filter_vals else False
+
+                    if is_date_col and filters_are_years:
+                        print(f"📊 Detected Year filtering on Date column: {filter_col}")
+                        # Convert column to datetime if needed
+                        temp_series = pd.to_datetime(df[filter_col], errors='coerce')
+                        # Filter by year
+                        mask = temp_series.dt.year.astype(str).isin([str(v) for v in filter_vals])
+                        working_df = df[mask]
+                    else:
+                        # Standard Case-insensitive string filtering
+                        mask = df[filter_col].astype(str).str.lower().isin([str(v).lower() for v in filter_vals])
+                        working_df = df[mask]
+                        
                     print(f"📊 Filtered data: {len(working_df)} rows (from {len(df)})")
 
         # Generate aggregated data with correct parameters
@@ -607,14 +634,40 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
                 agg_result = grouped.sum()
 
             # Sort and limit
-            agg_result = agg_result.sort_values(ascending=sort_ascending).head(limit)
             
-            # Handle reset_index carefully to avoid duplicate column names
-            # When group_col == value_col (e.g., counting Category by Category),
-            # we need to rename the value column to avoid conflict
-            if group_col == value_col:
-                # Use reset_index with a different name for the value column
-                agg_data = agg_result.reset_index(name=f"{value_col}_count")
+            # Check if grouping by Date/Time (Time Series)
+            is_time_series = False
+            try:
+                if pd.api.types.is_datetime64_any_dtype(df[group_col]):
+                    is_time_series = True
+                elif "date" in group_col.lower() or "year" in group_col.lower() or "month" in group_col.lower():
+                     # Heuristic for date columns
+                    is_time_series = True
+            except:
+                pass
+            
+            if is_time_series:
+                 # Time Series: Sort by Index (Time) Ascending
+                 agg_result = agg_result.sort_index(ascending=True)
+                 
+                 # Relax limit for trends unless explicitly requested
+                 # If usage didn't specify a limit, show more points (e.g. 50)
+                 has_explicit_limit = hasattr(self, '_current_analysis') and self._current_analysis and self._current_analysis.limit_number
+                 if not has_explicit_limit:
+                     limit = 50 
+                 
+                 agg_result = agg_result.head(limit)
+            else:
+                 # Standard Ranking: Sort by Value
+                agg_result = agg_result.sort_values(ascending=sort_ascending).head(limit)
+            
+            # Handle reset_index and column naming
+            # When aggregating by count, rename value column to "Count" for clarity
+            if aggregation == "count":
+                 agg_data = agg_result.reset_index(name="Count")
+            elif group_col == value_col:
+                # Use reset_index with a different name for the value column check
+                agg_data = agg_result.reset_index(name=f"{value_col}_{aggregation}")
             else:
                 agg_data = agg_result.reset_index()
 
