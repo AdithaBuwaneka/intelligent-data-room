@@ -136,6 +136,9 @@ Analyze the user's query against the available data schema AND conversation cont
 
 4. **Filter/Refinement** (follow_up_type: "filter_change")
    - "only for 2021", "just the west region", "exclude returns", "show only technology and furniture"
+   - **Referential Filters:** "in that region", "for those products", "in that year"
+   - **CRITICAL:** You MUST look at the conversation context to find the specific value!
+   - Example Context: "Assistant: The top region is West." -> User: "Top cities in that region" -> filter_values: ["West"]
    - Set: is_follow_up=true, inherit_from_previous=true
    - **IMPORTANT:** Extract the filter values into filter_values array!
    - Example: "Show only technology and furniture" → filter_values: ["Technology", "Furniture"]
