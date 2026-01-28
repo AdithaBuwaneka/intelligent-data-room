@@ -56,52 +56,53 @@ AI-powered data analysis platform with multi-agent architecture. Upload CSV/XLSX
 └─────────────────────────┬───────────────────────────────────┘
                           │
          ┌────────────────▼────────────────┐
-         │      1. Memory Service          │◄────────────────┐
-         │   (Load last 5 messages)        │                 │
-         └────────────────┬────────────────┘                 │
-                          │                                  │
-         ┌────────────────▼────────────────┐                 │
-         │      2. Query Classifier        │                 │
-         │      (Gemini 2.5 Flash)         │                 │
-         └───────┬────────────────┬────────┘                 │
-                 │                │                          │
-        [Greeting/Chitchat]  [Data Question]                 │
-                 │                │                          │
-                 │          ┌─────▼──────┐                   │
-                 │          │ Load Data  │                   │
-                 │          │ (ImageKit) │                   │
-                 │          └─────┬──────┘                   │
-                 │                │                          │
-                 │   ┌────────────▼────────────┐             │
-                 │   │    3. Query Analyzer    │             │
-                 │   │    (Gemini 2.5 Flash)   │             │
-                 │   │  • is_meaningful_query? │             │
-                 │   │  • can_be_answered?     │             │
-                 │   │  • detect follow-ups    │             │
-                 │   └─────┬─────────────┬─────┘             │
-                 │         │             │                   │
-                 │    [Valid Query]  [Invalid]               │
-                 │         │             │                   │
-                 │         │             ▼                   │
-                 │         │    Save + Return Error ─────────┤
-                 │         │                                 │
-                 │   ┌─────▼─────────────────┐               │
-                 │   │  4. LangGraph Workflow │               │
-                 │   │ ┌────────┐ ┌────────┐ │               │
-                 │   │ │Planner │►│Executor│ │               │
-                 │   │ │(Gemini)│ │(Pandas │ │               │
-                 │   │ └────────┘ │AI+Gem) │ │               │
-                 │   │            └────────┘ │               │
-                 │   └───────────┬───────────┘               │
-                 │               │                           │
-                 │   ┌───────────▼───────────┐               │
-                 └──►│   5. Save to MongoDB  │───────────────┘
-                     │ (Messages+Analysis)   │
-                     └───────────┬───────────┘
-                                 │
-                                 ▼
-                          Return Response
-                       (answer + chart_config)
+         │      1. Memory Service          │◄──────────────────┐
+         │   (Load last 5 messages)        │                   │
+         └────────────────┬────────────────┘                   │
+                          │                                    │
+         ┌────────────────▼────────────────┐                   │
+         │      2. Query Classifier        │                   │
+         │      (Gemini 2.5 Flash)         │                   │
+         └───────┬────────────────┬────────┘                   │
+                 │                │                            │
+        [Greeting/Chitchat]  [Data Question]                   │
+                 │                │                            │
+                 │          ┌─────▼──────┐                     │
+                 │          │ Load Data  │                     │
+                 │          │ (ImageKit) │                     │
+                 │          └─────┬──────┘                     │
+                 │                │                            │
+                 │   ┌────────────▼────────────┐               │
+                 │   │    3. Query Analyzer    │               │
+                 │   │    (Gemini 2.5 Flash)   │               │
+                 │   │  • is_meaningful_query? │               │
+                 │   │  • can_be_answered?     │               │
+                 │   │  • detect follow-ups    │               │
+                 │   └─────┬─────────────┬─────┘               │
+                 │         │             │                     │
+                 │   [Valid Query]   [Invalid]                 │
+                 │         │             │                     │
+                 │         │             ▼                     │
+                 │         │      Save & Return ───────────────┤
+                 │         │      (error msg)                  │
+                 │         │                                   │
+                 │   ┌─────▼───────────────────────┐           │
+                 │   │     4. LangGraph Workflow   │           │
+                 │   │  ┌─────────┐  ┌──────────┐  │           │
+                 │   │  │ Planner │─►│ Executor │  │           │
+                 │   │  │(Gemini) │  │(PandasAI)│  │           │
+                 │   │  └─────────┘  │ +Gemini  │  │           │
+                 │   │               └──────────┘  │           │
+                 │   └─────────────┬───────────────┘           │
+                 │                 │                           │
+                 ▼   ┌─────────────▼─────────────┐             │
+          Save & ───►│    5. Save to MongoDB    │─────────────┘
+          Return     │   (Messages+Analysis)    │
+       (friendly)    └─────────────┬────────────┘
+                                   │
+                                   ▼
+                            Return Response
+                         (answer + chart_config)
 
 External Services:
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
