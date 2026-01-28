@@ -4,6 +4,13 @@ LangGraph Workflow
 Defines the multi-agent workflow using LangGraph's StateGraph.
 Orchestrates communication between Planner and Executor agents.
 
+INTELLIGENT ANALYSIS:
+Uses QueryAnalysis from QueryAnalyzer for intelligent decisions:
+- Whether to show visualization
+- What chart type to use
+- What limit number (top N)
+- Which columns to use
+
 Workflow:
     User Question → Planner Agent → Executor Agent → Response
 """
@@ -14,6 +21,7 @@ import pandas as pd
 
 from app.agents.planner import PlannerAgent
 from app.agents.executor import ExecutorAgent
+from app.agents.query_analyzer import QueryAnalysis
 
 
 class AgentState(TypedDict):
@@ -27,6 +35,7 @@ class AgentState(TypedDict):
     data_schema: dict
     context: str
     dataframe: Any  # pd.DataFrame
+    query_analysis: Optional[QueryAnalysis]  # Intelligent analysis from Gemini
 
     # Intermediate
     plan: str
@@ -81,6 +90,9 @@ class AgentWorkflow:
         """
         Planner node: Creates execution plan.
 
+        Uses QueryAnalysis as SINGLE SOURCE OF TRUTH when available.
+        This prevents conflicting decisions between Analyzer and Planner.
+
         Args:
             state: Current workflow state
 
@@ -90,10 +102,24 @@ class AgentWorkflow:
         print("🧠 Planner Agent: Analyzing question and creating plan...")
 
         try:
+            # Get query analysis (may be None for legacy code paths)
+            query_analysis = state.get("query_analysis")
+            analysis_dict = None
+
+            if query_analysis:
+                # Convert to dict if it's a Pydantic model
+                if hasattr(query_analysis, "model_dump"):
+                    analysis_dict = query_analysis.model_dump()
+                elif isinstance(query_analysis, dict):
+                    analysis_dict = query_analysis
+
+                print(f"📊 Using QueryAnalysis for plan (follow_up={analysis_dict.get('is_follow_up', False)})")
+
             plan = await self.planner.create_plan(
                 question=state["question"],
                 data_schema=state["data_schema"],
                 context=state.get("context"),
+                query_analysis=analysis_dict,  # Pass analysis for single source of truth
             )
 
             print(f"📋 Plan created:\n{plan[:200]}...")
@@ -111,8 +137,14 @@ class AgentWorkflow:
         """
         Executor node: Executes plan and generates results.
 
+        Uses QueryAnalysis for intelligent decisions about:
+        - Whether to show visualization
+        - Chart type
+        - Limit number (top N)
+        - Column selection
+
         Args:
-            state: Current workflow state with plan
+            state: Current workflow state with plan and query_analysis
 
         Returns:
             Updated state with answer and chart_config
@@ -128,10 +160,14 @@ class AgentWorkflow:
                     "chart_config": None,
                 }
 
+            # Get query analysis (may be None for older code paths)
+            query_analysis = state.get("query_analysis")
+
             result = await self.executor.execute_plan(
                 plan=state["plan"],
                 df=df,
                 question=state["question"],
+                query_analysis=query_analysis,  # Pass analysis for intelligent decisions
             )
 
             print(f"✅ Execution complete. Answer length: {len(result['answer'])} chars")
@@ -154,6 +190,7 @@ class AgentWorkflow:
         question: str,
         dataframe: pd.DataFrame,
         context: Optional[str] = None,
+        query_analysis: Optional[QueryAnalysis] = None,
     ) -> dict:
         """
         Run the multi-agent workflow.
@@ -162,6 +199,8 @@ class AgentWorkflow:
             question: User's natural language question
             dataframe: Pandas DataFrame with the data
             context: Previous conversation context
+            query_analysis: Intelligent analysis from QueryAnalyzer (Gemini 2.5)
+                          Used for visualization decisions, limit extraction, etc.
 
         Returns:
             Dictionary with answer, plan, and chart_config
@@ -169,6 +208,9 @@ class AgentWorkflow:
         print(f"\n{'='*50}")
         print(f"🚀 Starting Multi-Agent Workflow")
         print(f"📝 Question: {question}")
+        if query_analysis:
+            print(f"🧠 Analysis: viz={query_analysis.requires_visualization}, "
+                  f"chart={query_analysis.chart_type}, limit={query_analysis.limit_number}")
         print(f"{'='*50}\n")
 
         # Prepare data schema
@@ -180,6 +222,7 @@ class AgentWorkflow:
             "data_schema": data_schema,
             "context": context or "No previous conversation context.",
             "dataframe": dataframe,
+            "query_analysis": query_analysis,  # Pass intelligent analysis
             "plan": "",
             "answer": "",
             "chart_config": None,

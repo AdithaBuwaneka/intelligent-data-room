@@ -244,12 +244,34 @@ function App() {
                 </li>
               </ol>
 
-              {/* Example queries */}
+              {/* Dynamic Example queries based on uploaded file */}
               <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-xs font-medium text-gray-500 mb-2">Example questions:</p>
+                <p className="text-xs font-medium text-gray-500 mb-2">
+                  {file ? `Example questions for ${file.filename}:` : 'Example questions:'}
+                </p>
                 <div className="space-y-1.5">
-                  <p className="text-xs text-gray-500 italic">"Show total sales by category"</p>
-                  <p className="text-xs text-gray-500 italic">"Which region has the highest profit?"</p>
+                  {file && file.columns.length > 0 ? (
+                    // Dynamic suggestions based on file columns
+                    <>
+                      <p className="text-xs text-gray-500 italic">
+                        "How many rows are in this dataset?"
+                      </p>
+                      <p className="text-xs text-gray-500 italic">
+                        "Show distribution of {file.columns[0]}"
+                      </p>
+                      {file.columns.some(c => c.toLowerCase().includes('sales') || c.toLowerCase().includes('profit') || c.toLowerCase().includes('amount')) && (
+                        <p className="text-xs text-gray-500 italic">
+                          "What are the top 5 by {file.columns.find(c => c.toLowerCase().includes('sales') || c.toLowerCase().includes('profit') || c.toLowerCase().includes('amount')) || file.columns[0]}?"
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    // Default suggestions
+                    <>
+                      <p className="text-xs text-gray-500 italic">"Show total sales by category"</p>
+                      <p className="text-xs text-gray-500 italic">"Which region has the highest profit?"</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

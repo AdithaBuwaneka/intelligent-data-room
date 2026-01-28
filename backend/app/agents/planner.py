@@ -36,39 +36,30 @@ Create a structured plan with these sections:
 
 **OUTPUT FORMAT:** [Describe what the final answer should look like]
 
-## Intelligent Visualization Decision:
+## Visualization Decision (USE SEMANTIC UNDERSTANDING!):
 
-**Understand the user's TRUE INTENT - don't just match keywords:**
+**Understand user's TRUE INTENT - Do they want to SEE a visual, or KNOW information?**
 
-**User WANTS visualization when they:**
-- Use visual action words in ANY language: "chart", "plot", "graph", "visualize", "draw", "show me visually"
-- Ask for visual comparisons: "compare visually", "see the distribution", "display trends"
-- Want to see patterns: "show the pattern", "illustrate the relationship"
-- Any phrasing that implies wanting to SEE something visually
+**VISUALIZATION: YES - when user intends to create visual output:**
+Their goal is to SEE something graphically. They want an image/chart/graph as output.
+- They're requesting creation of visual elements
+- They want to view data in picture/graphical form
+- They explicitly mention wanting to see charts, graphs, plots, diagrams
 
-**User DOES NOT want visualization when they:**
-- Use negative language: "don't", "without", "no need for", "skip the", "just calculate", "only numbers"
-- Ask for specific formats: "table only", "list format", "text results", "numbers only"
-- Focus purely on calculation: "calculate", "compute", "what is the number"
-- Any phrasing that indicates they want data without visuals
+**VISUALIZATION: NO - when user intends to get information:**
+Their goal is to KNOW something or GET a value. They want text/numbers as answer.
+- They're asking questions (what is, how many, which one, who)
+- They want calculations (totals, averages, sums, counts)
+- They want lists or rankings described
+- They want to understand trends or changes (described in words)
+- They're exploring the data structure
 
-**Smart Decision Making:**
-- If user mentions BOTH (e.g., "chart the sales but don't show visualization"):
-  → Understand the contradiction → Negative instruction takes priority → NO
-  
-- If unclear or ambiguous:
-  → Consider question type:
-    - Comparisons across categories → Often benefits from visualization
-    - Trends over time → Often benefits from visualization  
-    - Single values/counts → Usually doesn't need visualization
-    - Top N items → Could benefit from visualization
-  → Consider if user asked for it before in context
-  → Make intelligent decision
+**The word "show" is ambiguous - understand from context:**
+- "show me the top 5" = tell me which are top 5 = NO
+- "show me a chart of the top 5" = display a chart = YES
 
-- Focus on INTENT, not exact words:
-  - "I want to see sales by region" (even without "chart") → Could benefit from visual → YES
-  - "Give me the total sales number" → Just wants a number → NO
-  - "How does profit compare across categories" → Comparison suggests visual → YES (unless they said no)
+**When QueryAnalysis is provided:** Follow its requires_visualization field exactly.
+**When uncertain:** Default to NO. User can ask for chart explicitly if they want one.
 
 ## Guidelines:
 - Be specific about column names (use exact names from schema)
@@ -76,35 +67,6 @@ Create a structured plan with these sections:
 - For filtering, specify the exact conditions
 - For sorting, specify ascending/descending
 - If visualization is needed, be explicit about chart type and axes
-- Keep plans concise but complete
-- **Use semantic understanding to interpret user intent**
-
-## Examples:
-
-**Example 1:**
-Question: "What are the top 5 products by sales?"
-→ Intent: Get top products. Could benefit visually but not explicitly requested.
-→ Decision: YES (comparison across categories)
-
-**Example 2:**
-Question: "Calculate the Return Rate for each Region. Don't give any chart"
-→ Intent: Calculate rates BUT explicitly doesn't want visualization
-→ Decision: NO (negative instruction clear)
-
-**Example 3:**  
-Question: "Show me how profit changed over the years"
-→ Intent: See changes/trends ("show me") 
-→ Decision: YES (temporal trend, visual helps)
-
-**Example 4:**
-Question: "What's the total revenue?"
-→ Intent: Get single number
-→ Decision: NO (single value doesn't need chart)
-
-**Example 5:**
-Question: "Calculate and chart Return Rate by Region, but I only need the table"
-→ Intent: Even though "chart" mentioned, "only need the table" overrides
-→ Decision: NO (negative instruction in context)
 """
 
 
@@ -133,6 +95,7 @@ class PlannerAgent:
         question: str,
         data_schema: dict,
         context: Optional[str] = None,
+        query_analysis: Optional[dict] = None,
     ) -> str:
         """
         Create an execution plan for the given question.
@@ -141,10 +104,15 @@ class PlannerAgent:
             question: User's natural language question
             data_schema: Dictionary with column names and sample data
             context: Previous conversation context
+            query_analysis: QueryAnalysis dict from intelligent analyzer (single source of truth)
 
         Returns:
             Step-by-step execution plan as a string
         """
+        # If we have QueryAnalysis, use it to guide the plan (SINGLE SOURCE OF TRUTH)
+        if query_analysis:
+            return self._create_plan_from_analysis(question, data_schema, query_analysis)
+
         # Build the prompt with system instruction
         prompt_parts = [PLANNER_SYSTEM_PROMPT, "\n---\n"]
 
@@ -189,6 +157,95 @@ class PlannerAgent:
 **VISUALIZATION:** NO
 
 **OUTPUT FORMAT:** Text response"""
+
+    def _create_plan_from_analysis(
+        self,
+        question: str,
+        data_schema: dict,
+        analysis: dict,
+    ) -> str:
+        """
+        Create a plan directly from QueryAnalysis.
+        This ensures SINGLE SOURCE OF TRUTH - no conflicting decisions.
+        """
+        # Extract analysis parameters
+        group_col = analysis.get("group_column", "")
+        value_col = analysis.get("value_column", "")
+        aggregation = analysis.get("aggregation", "sum")
+        limit = analysis.get("limit_number")
+        chart_type = analysis.get("chart_type")
+        requires_viz = analysis.get("requires_visualization", False)
+        sort_order = analysis.get("sort_order", "desc")
+        is_follow_up = analysis.get("is_follow_up", False)
+        follow_up_type = analysis.get("follow_up_type", "")
+
+        # Build columns needed
+        columns_needed = []
+        if group_col:
+            columns_needed.append(group_col)
+        if value_col:
+            columns_needed.append(value_col)
+
+        columns_str = ", ".join(columns_needed) if columns_needed else "To be determined"
+
+        # Build steps
+        steps = []
+        step_num = 1
+
+        if is_follow_up:
+            steps.append(f"{step_num}. This is a follow-up query ({follow_up_type}). Use parameters from previous analysis.")
+            step_num += 1
+
+        if group_col and value_col:
+            steps.append(f"{step_num}. Group data by '{group_col}'")
+            step_num += 1
+            agg_name = {"sum": "Sum", "mean": "Average", "count": "Count", "min": "Minimum", "max": "Maximum"}.get(aggregation, "Sum")
+            steps.append(f"{step_num}. Calculate {agg_name} of '{value_col}' for each group")
+            step_num += 1
+
+        if limit:
+            order = "descending" if sort_order == "desc" else "ascending"
+            steps.append(f"{step_num}. Sort results in {order} order and select top {limit}")
+            step_num += 1
+
+        if not steps:
+            steps.append(f"{step_num}. Process data according to the question")
+            step_num += 1
+
+        steps_str = "\n".join(steps)
+
+        # Visualization decision
+        viz_str = "NO"
+        if requires_viz and chart_type:
+            viz_str = f"YES - {chart_type} chart"
+            if group_col:
+                viz_str += f" with X-axis: {group_col}"
+            if value_col:
+                viz_str += f", Y-axis: {value_col}"
+
+        # Build objective
+        objective = question
+        if is_follow_up and follow_up_type:
+            type_desc = {
+                "chart_type_change": "Change chart type",
+                "limit_change": "Change result limit",
+                "column_change": "Change grouping column",
+                "filter_change": "Apply filter"
+            }.get(follow_up_type, "Follow-up")
+            objective = f"[{type_desc}] {question}"
+
+        plan = f"""**OBJECTIVE:** {objective}
+
+**DATA COLUMNS NEEDED:** {columns_str}
+
+**STEPS:**
+{steps_str}
+
+**VISUALIZATION:** {viz_str}
+
+**OUTPUT FORMAT:** {'Chart with data summary' if requires_viz else 'Text response with data'}"""
+
+        return plan
 
     def _format_schema(self, data_schema: dict) -> str:
         """Format data schema for the prompt."""
