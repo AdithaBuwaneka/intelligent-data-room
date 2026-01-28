@@ -88,34 +88,34 @@ export function ChartDisplay({ config }: ChartDisplayProps) {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart 
           data={data} 
-          layout={isHorizontalBars ? 'vertical' : 'horizontal'}
+          layout={isHorizontalBars ? 'vertical' : undefined}
           margin={{ top: 20, right: 30, left: isHorizontalBars ? 100 : 20, bottom: 60 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           
+          
+
           {isHorizontalBars ? (
-             // Horizontal Bars: Y axis is categories, X axis is numbers
-             <>
-               <XAxis type="number" tick={{ fontSize: 12 }} />
-               <YAxis 
-                 dataKey={xKey} 
-                 type="category" 
-                 width={90}
-                 tick={{ fontSize: 12 }} 
-               />
-             </>
+            <XAxis type="number" tick={{ fontSize: 12 }} />
           ) : (
-             // Vertical Bars (Default): X axis is categories, Y axis is numbers
-             <>
-               <XAxis
-                dataKey={xKey}
-                tick={{ fontSize: 12 }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-             </>
+            <XAxis
+              dataKey={xKey}
+              tick={{ fontSize: 12 }}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+            />
+          )}
+
+          {isHorizontalBars ? (
+            <YAxis 
+              dataKey={xKey} 
+              type="category" 
+              width={90}
+              tick={{ fontSize: 12 }} 
+            />
+          ) : (
+            <YAxis tick={{ fontSize: 12 }} />
           )}
 
           <Tooltip
