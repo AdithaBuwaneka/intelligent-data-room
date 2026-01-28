@@ -324,12 +324,22 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
             # Generate title
             title = self._generate_chart_title(question)
 
+            # Check for horizontal layout
+            layout = None
+            if chart_type == "bar":
+                question_lower = question.lower()
+                plan_lower = plan.lower()
+                if "horizontal" in question_lower or "barh" in question_lower or "horizontal" in plan_lower:
+                    layout = "vertical"  # Recharts uses 'vertical' layout for horizontal bars
+                    print("📊 Detected horizontal bar chart intent")
+
             return {
                 "type": chart_type,
                 "data": chart_data,
                 "xKey": x_key,
                 "yKey": y_key,
                 "title": title,
+                "layout": layout,
             }
 
         except Exception as e:

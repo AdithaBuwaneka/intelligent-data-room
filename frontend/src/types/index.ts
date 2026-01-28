@@ -16,6 +16,7 @@ export interface ChartConfig {
   yKey: string | string[];
   title?: string;
   colors?: string[];
+  layout?: 'horizontal' | 'vertical';
 }
 
 // File upload response from backend

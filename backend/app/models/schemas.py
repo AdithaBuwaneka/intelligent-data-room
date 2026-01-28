@@ -16,6 +16,7 @@ class ChartConfig(BaseModel):
     yKey: str | list[str] = Field(..., description="Key(s) for Y-axis data")
     title: Optional[str] = Field(None, description="Chart title")
     colors: Optional[list[str]] = Field(None, description="Custom color palette")
+    layout: Optional[str] = Field(None, description="Chart layout (e.g., 'vertical' for horizontal bars)")
 
 
 class FileUploadResponse(BaseModel):
