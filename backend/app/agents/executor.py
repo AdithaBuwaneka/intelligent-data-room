@@ -162,20 +162,31 @@ class ExecutorAgent:
         plan: str,
         df: pd.DataFrame,
         question: str,
+        query_analysis: Optional[Any] = None,
     ) -> dict[str, Any]:
         """
         Execute the plan using PandasAI and return results.
+
+        Uses QueryAnalysis from Gemini 2.5 for intelligent decisions:
+        - Whether to show visualization (not keyword-based)
+        - What chart type to use
+        - What limit number (top N)
+        - Which columns to use for grouping/values
 
         Args:
             plan: Execution plan from Planner agent
             df: Pandas DataFrame with the data
             question: Original user question
+            query_analysis: Intelligent analysis from QueryAnalyzer
 
         Returns:
             Dictionary with:
             - answer: String answer to the question
             - chart_config: Optional chart configuration for visualization
         """
+        # Store analysis for use in helper methods
+        self._current_analysis = query_analysis
+
         # Track timestamp before execution to find only new charts
         start_time = time.time()
 
@@ -327,68 +338,104 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
 
     def _needs_visualization(self, plan: str, question: str) -> bool:
         """
-        Determine if visualization is needed by checking the plan.
-        
-        Respects the planner's VISUALIZATION decision which already considered:
-        - User's explicit preferences ("don't chart", "without visualization")
-        - Question intent and context
-        - Whether visualization would add value
+        Determine if visualization is needed.
+
+        INTELLIGENT AI-ONLY APPROACH:
+        1. QueryAnalysis from Gemini 2.5 (handles billions of phrase variations)
+        2. Planner's VISUALIZATION directive (also AI-generated)
+        3. Safe default: NO visualization (rather than incorrect keyword matching)
+
+        This ensures meaningless queries NEVER get charts.
         """
-        # First priority: Check what the planner decided
+        # PRIORITY 1: Use QueryAnalysis if available (INTELLIGENT - PREFERRED)
+        if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+            analysis = self._current_analysis
+
+            # If query is not meaningful, NEVER show chart
+            if not analysis.is_meaningful_query:
+                print("📊 Query not meaningful - NO visualization")
+                return False
+
+            # If query cannot be answered, NEVER show chart
+            if not analysis.can_be_answered:
+                print("📊 Query cannot be answered - NO visualization")
+                return False
+
+            # Use the intelligent decision from Gemini
+            if analysis.requires_visualization:
+                print(f"📊 Gemini Analysis: VISUALIZATION YES (type: {analysis.chart_type})")
+                return True
+            else:
+                print("📊 Gemini Analysis: VISUALIZATION NO")
+                return False
+
+        # PRIORITY 2: Check Planner's decision (also AI-generated)
         plan_lower = plan.lower()
-        
-        # Look for explicit VISUALIZATION directive in the plan
+
         if "visualization:" in plan_lower or "visualization::" in plan_lower:
-            # Extract the visualization decision
             if "visualization: no" in plan_lower or "visualization:: no" in plan_lower or "visualization:no" in plan_lower:
-                print("📊 Planner said VISUALIZATION: NO - respecting decision")
+                print("📊 Planner said VISUALIZATION: NO")
                 return False
             elif "visualization: yes" in plan_lower or "visualization:: yes" in plan_lower or "visualization:yes" in plan_lower:
-                print("📊 Planner said VISUALIZATION: YES - will generate chart")
+                print("📊 Planner said VISUALIZATION: YES")
                 return True
-        
-        # Fallback: If no explicit directive in plan, infer from keywords
-        # This handles older plans or edge cases
-        viz_keywords = [
-            "chart", "graph", "plot", "visualize", "visualization",
-            "show", "display", "trend", "compare", "comparison",
-            "distribution", "pie", "bar", "line", "scatter"
-        ]
-        
-        # Check if user explicitly said NO to visualization
-        no_viz_keywords = ["don't chart", "no chart", "without chart", "no visualization", 
-                          "without visualization", "no graph", "table only", "just calculate"]
-        
-        combined = (plan + " " + question).lower()
-        
-        # If user explicitly said no, respect it
-        if any(no_kw in combined for no_kw in no_viz_keywords):
-            print("📊 User explicitly requested no visualization")
-            return False
-        
-        # Otherwise check for visualization keywords
-        has_viz_keywords = any(keyword in combined for keyword in viz_keywords)
-        if has_viz_keywords:
-            print("📊 Visualization keywords found, will generate chart")
-        return has_viz_keywords
+
+        # SAFE DEFAULT: No QueryAnalysis available, default to NO visualization
+        # This is safer than keyword matching which could produce incorrect charts
+        print("📊 No QueryAnalysis available - defaulting to NO visualization")
+        return False
 
     def _determine_chart_type(self, plan: str, question: str) -> Optional[str]:
-        """Determine the appropriate chart type."""
-        combined = (plan + " " + question).lower()
+        """
+        Determine the appropriate chart type.
 
-        if "pie chart" in combined or ("pie" in combined and "distribution" in combined):
-            return "pie"
-        elif "line chart" in combined or "trend" in combined or "over time" in combined or "over the years" in combined:
-            return "line"
-        elif "scatter" in combined or "correlation" in combined:
-            return "scatter"
-        elif "area" in combined:
-            return "area"
-        elif "bar" in combined or "compare" in combined or "top" in combined or "by category" in combined:
-            return "bar"
+        INTELLIGENT AI-ONLY APPROACH:
+        Uses QueryAnalysis from Gemini 2.5 which understands:
+        - User intent (not just keywords)
+        - Context from previous queries
+        - Data schema suitability
+        """
+        # Use QueryAnalysis if available (INTELLIGENT - ONLY APPROACH)
+        if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+            analysis = self._current_analysis
 
-        # Default to bar chart for most comparisons
-        return "bar"
+            # If not meaningful or can't answer, return None (no chart)
+            if not analysis.is_meaningful_query or not analysis.can_be_answered:
+                return None
+
+            # Use intelligent chart type decision
+            if analysis.chart_type:
+                print(f"📈 Gemini determined chart type: {analysis.chart_type}")
+                return analysis.chart_type
+
+            # If requires visualization but no type specified, default to bar
+            if analysis.requires_visualization:
+                print("📈 Gemini requires viz but no type - defaulting to bar")
+                return "bar"
+
+            # If no visualization needed, return None
+            return None
+
+        # SAFE DEFAULT: No analysis available, check planner's decision
+        plan_lower = plan.lower()
+        
+        # Only proceed if planner explicitly said YES to visualization
+        if "visualization: yes" in plan_lower or "visualization:: yes" in plan_lower:
+            # Extract chart type from planner's output
+            if "pie chart" in plan_lower or "pie" in plan_lower:
+                return "pie"
+            elif "line chart" in plan_lower or "line" in plan_lower:
+                return "line"
+            elif "scatter" in plan_lower:
+                return "scatter"
+            elif "area" in plan_lower:
+                return "area"
+            else:
+                return "bar"  # Default for comparisons
+
+        # No valid analysis, no clear planner directive -> no chart
+        print("📈 No QueryAnalysis available - returning None (no chart)")
+        return None
 
     def _prepare_chart_data(
         self,
@@ -397,16 +444,27 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
         plan: str,
         question: str,
     ) -> list[dict]:
-        """Prepare data for chart rendering."""
+        """
+        Prepare data for chart rendering.
+
+        Uses intelligent limit from QueryAnalysis.
+        """
+        # Get limit from analysis or use default
+        limit = 20  # Default
+
+        if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+            if self._current_analysis.limit_number:
+                limit = self._current_analysis.limit_number
+
         if isinstance(result, pd.DataFrame) and not result.empty:
-            # Convert DataFrame to list of dicts
-            return result.head(20).to_dict(orient="records")
+            # Convert DataFrame to list of dicts with correct limit
+            return result.head(limit).to_dict(orient="records")
 
         if isinstance(result, pd.Series):
-            # Convert Series to list of dicts
+            # Convert Series to list of dicts with correct limit
             return [
                 {"name": str(idx), "value": float(val) if pd.notna(val) else 0}
-                for idx, val in result.head(20).items()
+                for idx, val in result.head(limit).items()
             ]
 
         # Try to generate chart data from the original DataFrame
@@ -418,36 +476,97 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
         plan: str,
         question: str,
     ) -> list[dict]:
-        """Generate chart data by analyzing the DataFrame based on the plan."""
+        """
+        Generate chart data by analyzing the DataFrame based on the plan.
+
+        INTELLIGENT DECISIONS from QueryAnalysis:
+        - Uses correct limit number (top 5, top 10, etc.)
+        - Uses correct columns from analysis
+        - Uses correct aggregation type
+        """
         plan_lower = plan.lower()
         question_lower = question.lower()
 
-        # Find potential grouping column (categorical)
+        # Get intelligent parameters from analysis
+        limit = 10  # Default
+        group_col = None
+        value_col = None
+        aggregation = "sum"  # Default
+        sort_ascending = False  # Default: descending for "top"
+
+        if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+            analysis = self._current_analysis
+
+            # Use intelligent limit (fixes "top 5 shows 10" issue)
+            if analysis.limit_number:
+                limit = analysis.limit_number
+                print(f"📊 Using intelligent limit: {limit}")
+
+            # Use intelligent column selection with FUZZY MATCHING
+            if analysis.group_column:
+                group_col = self._find_column_fuzzy(df, analysis.group_column)
+                if group_col:
+                    print(f"📊 Using group column from analysis: {group_col}")
+
+            if analysis.value_column:
+                value_col = self._find_column_fuzzy(df, analysis.value_column)
+                if value_col:
+                    print(f"📊 Using value column from analysis: {value_col}")
+
+            # Use intelligent aggregation
+            if analysis.aggregation:
+                aggregation = analysis.aggregation
+                print(f"📊 Using aggregation: {aggregation}")
+
+            # Use sort order
+            if analysis.sort_order:
+                sort_ascending = (analysis.sort_order == "asc")
+
+        # Find columns if not specified by analysis
         cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
         num_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
         if not cat_cols or not num_cols:
             return []
 
-        # Use first categorical and numerical column as default
-        group_col = cat_cols[0]
-        value_col = num_cols[0]
+        # Intelligent fallback: Use fuzzy matching from plan/question
+        if not group_col:
+            combined_text = plan_lower + " " + question_lower
+            group_col = self._find_column_from_text(df, cat_cols, combined_text)
+            if not group_col:
+                group_col = cat_cols[0]
+                print(f"📊 No match found, using first category column: {group_col}")
 
-        # Try to find better columns from the plan/question
-        for col in cat_cols:
-            if col.lower() in plan_lower or col.lower() in question_lower:
-                group_col = col
-                break
+        if not value_col:
+            combined_text = plan_lower + " " + question_lower
+            value_col = self._find_column_from_text(df, num_cols, combined_text)
+            if not value_col:
+                value_col = num_cols[0]
+                print(f"📊 No match found, using first numeric column: {value_col}")
 
-        for col in num_cols:
-            if col.lower() in plan_lower or col.lower() in question_lower:
-                value_col = col
-                break
-
-        # Generate aggregated data
+        # Generate aggregated data with correct parameters
         try:
-            agg_data = df.groupby(group_col)[value_col].sum().head(10).reset_index()
+            grouped = df.groupby(group_col)[value_col]
+
+            # Apply aggregation
+            if aggregation == "mean":
+                agg_result = grouped.mean()
+            elif aggregation == "count":
+                agg_result = grouped.size()
+            elif aggregation == "min":
+                agg_result = grouped.min()
+            elif aggregation == "max":
+                agg_result = grouped.max()
+            else:  # Default: sum
+                agg_result = grouped.sum()
+
+            # Sort and limit
+            agg_result = agg_result.sort_values(ascending=sort_ascending).head(limit)
+            agg_data = agg_result.reset_index()
+
+            print(f"📊 Generated chart data: {len(agg_data)} rows (limit: {limit})")
             return agg_data.to_dict(orient="records")
+
         except Exception as e:
             print(f"❌ Chart data generation error: {e}")
             return []
@@ -491,6 +610,126 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
             title = title[:57] + "..."
 
         return title
+
+    def _find_column_fuzzy(self, df: pd.DataFrame, target: str) -> Optional[str]:
+        """
+        Find a column using intelligent fuzzy matching.
+        
+        Handles billions of phrase variations by:
+        1. Exact match (case-insensitive)
+        2. Partial match (target contained in column name)
+        3. Reverse partial match (column name contained in target)
+        4. Common synonyms
+        5. Word-by-word matching
+        """
+        if not target:
+            return None
+            
+        target_lower = target.lower().strip()
+        target_words = set(target_lower.replace("_", " ").replace("-", " ").split())
+        
+        # Common synonyms for data analysis
+        synonyms = {
+            "region": ["area", "location", "territory", "zone", "market"],
+            "state": ["province", "region", "location", "area"],
+            "category": ["type", "group", "class", "segment", "kind"],
+            "sales": ["revenue", "income", "amount", "value", "total"],
+            "profit": ["margin", "earnings", "gain", "income", "net"],
+            "quantity": ["count", "number", "units", "amount", "qty"],
+            "date": ["time", "period", "year", "month", "day"],
+            "customer": ["client", "buyer", "account", "consumer"],
+            "product": ["item", "sku", "goods", "merchandise"],
+            "order": ["transaction", "purchase", "sale"],
+            "discount": ["reduction", "rebate", "off"],
+        }
+        
+        # Build synonym set for target
+        target_synonyms = set()
+        for word in target_words:
+            target_synonyms.add(word)
+            if word in synonyms:
+                target_synonyms.update(synonyms[word])
+        
+        best_match = None
+        best_score = 0
+        
+        for col in df.columns:
+            col_lower = col.lower().strip()
+            col_words = set(col_lower.replace("_", " ").replace("-", " ").split())
+            
+            # Score 1: Exact match
+            if col_lower == target_lower:
+                return col
+            
+            # Score 2: Target contained in column (e.g., "region" in "Sales Region")
+            if target_lower in col_lower:
+                score = len(target_lower) / len(col_lower) + 0.5
+                if score > best_score:
+                    best_score = score
+                    best_match = col
+                continue
+            
+            # Score 3: Column contained in target (e.g., "State" in "by state")
+            if col_lower in target_lower:
+                score = len(col_lower) / len(target_lower) + 0.4
+                if score > best_score:
+                    best_score = score
+                    best_match = col
+                continue
+            
+            # Score 4: Word overlap
+            overlap = target_words & col_words
+            if overlap:
+                score = len(overlap) / max(len(target_words), len(col_words)) + 0.3
+                if score > best_score:
+                    best_score = score
+                    best_match = col
+                continue
+            
+            # Score 5: Synonym matching
+            for col_word in col_words:
+                if col_word in target_synonyms:
+                    score = 0.2
+                    if score > best_score:
+                        best_score = score
+                        best_match = col
+                    break
+        
+        if best_match:
+            print(f"🔍 Fuzzy matched '{target}' -> '{best_match}' (score: {best_score:.2f})")
+        
+        return best_match
+
+    def _find_column_from_text(
+        self, 
+        df: pd.DataFrame, 
+        candidate_cols: list[str], 
+        text: str
+    ) -> Optional[str]:
+        """
+        Find a column mentioned in natural language text.
+        
+        Uses fuzzy matching to handle variations like:
+        - "by region" -> "Region" or "Sales Region"
+        - "show sales" -> "Sales" or "Total Sales"
+        """
+        text_lower = text.lower()
+        
+        # First, try exact column name match
+        for col in candidate_cols:
+            if col.lower() in text_lower:
+                return col
+        
+        # Then try fuzzy matching for each word in text
+        text_words = text_lower.replace(",", " ").replace("?", " ").split()
+        for word in text_words:
+            if len(word) > 2:  # Skip short words
+                match = self._find_column_fuzzy(df[candidate_cols], word)
+                if match:
+                    return match
+        
+        return None
+    
     
     def _find_generated_chart(self, after_timestamp: float = 0) -> Optional[str]:
         """Find a chart file generated after the given timestamp."""
@@ -726,41 +965,66 @@ Keep your response focused and under 100 words."""
         """
         Perform basic pandas analysis based on the question and plan.
         Returns a string summary of the analysis results.
+
+        Uses intelligent parameters from QueryAnalysis.
         """
         try:
             results = []
             question_lower = question.lower()
             plan_lower = plan.lower()
 
+            # Get intelligent parameters
+            limit = 10  # Default
+            group_col = None
+            value_col = None
+            aggregation = None
+
+            if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+                analysis = self._current_analysis
+                if analysis.limit_number:
+                    limit = analysis.limit_number
+                if analysis.group_column:
+                    for col in df.columns:
+                        if col.lower() == analysis.group_column.lower():
+                            group_col = col
+                            break
+                if analysis.value_column:
+                    for col in df.columns:
+                        if col.lower() == analysis.value_column.lower():
+                            value_col = col
+                            break
+                aggregation = analysis.aggregation
+
             # Identify key columns mentioned
             cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
             num_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
-            # Find columns mentioned in question/plan
-            mentioned_cat = [c for c in cat_cols if c.lower() in question_lower or c.lower() in plan_lower]
-            mentioned_num = [c for c in num_cols if c.lower() in question_lower or c.lower() in plan_lower]
+            # Find columns if not from analysis
+            if not group_col:
+                mentioned_cat = [c for c in cat_cols if c.lower() in question_lower or c.lower() in plan_lower]
+                group_col = mentioned_cat[0] if mentioned_cat else (cat_cols[0] if cat_cols else None)
 
-            # Default to first columns if none mentioned
-            group_col = mentioned_cat[0] if mentioned_cat else (cat_cols[0] if cat_cols else None)
-            value_col = mentioned_num[0] if mentioned_num else (num_cols[0] if num_cols else None)
+            if not value_col:
+                mentioned_num = [c for c in num_cols if c.lower() in question_lower or c.lower() in plan_lower]
+                value_col = mentioned_num[0] if mentioned_num else (num_cols[0] if num_cols else None)
 
-            # Perform aggregations based on keywords
+            # Perform aggregations based on intelligent analysis or keywords
             if group_col and value_col:
-                if "top" in question_lower or "highest" in question_lower:
-                    agg = df.groupby(group_col)[value_col].sum().sort_values(ascending=False).head(10)
-                    results.append(f"Top {group_col} by {value_col}:\n{agg.to_string()}")
-                elif "total" in question_lower or "sum" in question_lower:
-                    agg = df.groupby(group_col)[value_col].sum()
-                    results.append(f"Total {value_col} by {group_col}:\n{agg.to_string()}")
-                elif "average" in question_lower or "mean" in question_lower:
-                    agg = df.groupby(group_col)[value_col].mean().round(2)
+                if aggregation == "mean" or "average" in question_lower or "mean" in question_lower:
+                    agg = df.groupby(group_col)[value_col].mean().round(2).sort_values(ascending=False).head(limit)
                     results.append(f"Average {value_col} by {group_col}:\n{agg.to_string()}")
-                elif "count" in question_lower:
-                    agg = df.groupby(group_col).size()
+                elif aggregation == "count" or "count" in question_lower:
+                    agg = df.groupby(group_col).size().sort_values(ascending=False).head(limit)
                     results.append(f"Count by {group_col}:\n{agg.to_string()}")
+                elif "top" in question_lower or "highest" in question_lower:
+                    agg = df.groupby(group_col)[value_col].sum().sort_values(ascending=False).head(limit)
+                    results.append(f"Top {limit} {group_col} by {value_col}:\n{agg.to_string()}")
+                elif "total" in question_lower or "sum" in question_lower:
+                    agg = df.groupby(group_col)[value_col].sum().sort_values(ascending=False).head(limit)
+                    results.append(f"Total {value_col} by {group_col}:\n{agg.to_string()}")
                 else:
                     # Default aggregation
-                    agg = df.groupby(group_col)[value_col].sum().sort_values(ascending=False).head(10)
+                    agg = df.groupby(group_col)[value_col].sum().sort_values(ascending=False).head(limit)
                     results.append(f"{value_col} by {group_col}:\n{agg.to_string()}")
 
             # Handle time-based analysis

@@ -32,6 +32,7 @@ class MemoryService:
         content: str,
         plan: Optional[str] = None,
         chart_config: Optional[dict] = None,
+        query_analysis: Optional[dict] = None,
     ) -> str:
         """
         Save a message to chat history.
@@ -42,6 +43,7 @@ class MemoryService:
             content: Message content
             plan: Execution plan (for assistant messages)
             chart_config: Chart configuration (for assistant messages)
+            query_analysis: QueryAnalysis dict for follow-up reference
 
         Returns:
             Inserted message ID
@@ -54,6 +56,7 @@ class MemoryService:
             "content": content,
             "plan": plan,
             "chart_config": chart_config,
+            "query_analysis": query_analysis,  # Store for follow-up handling
             "timestamp": datetime.utcnow(),
         }
 
@@ -123,31 +126,77 @@ class MemoryService:
 
         # Check if there was data analysis in the conversation
         has_data_analysis = any(
-            msg.get("plan") or msg.get("chart_config") 
+            msg.get("plan") or msg.get("chart_config")
             for msg in messages
         )
 
         context_lines = []
-        
+
         # Add a header indicating data analysis context
         if has_data_analysis:
             context_lines.append("[DATA ANALYSIS SESSION - Previous messages involved data queries]")
-        
+
         context_lines.append("Previous conversation:")
-        
+
         for msg in messages:
             role = "User" if msg["role"] == "user" else "Assistant"
             content = msg['content']
-            
+
             # Add indicators for data analysis responses
             if msg.get("plan"):
                 content += " [executed data analysis]"
             if msg.get("chart_config"):
-                content += " [created chart]"
-            
+                chart = msg.get("chart_config", {})
+                chart_type = chart.get("type", "unknown")
+                content += f" [created {chart_type} chart]"
+
+            # Add query analysis details for follow-up handling
+            if msg.get("query_analysis"):
+                qa = msg["query_analysis"]
+                analysis_parts = []
+                if qa.get("group_column"):
+                    analysis_parts.append(f"grouped by {qa['group_column']}")
+                if qa.get("value_column"):
+                    analysis_parts.append(f"value: {qa['value_column']}")
+                if qa.get("aggregation"):
+                    analysis_parts.append(f"aggregation: {qa['aggregation']}")
+                if qa.get("limit_number"):
+                    analysis_parts.append(f"limit: {qa['limit_number']}")
+                if qa.get("chart_type"):
+                    analysis_parts.append(f"chart: {qa['chart_type']}")
+                if analysis_parts:
+                    content += f" [analysis: {', '.join(analysis_parts)}]"
+
             context_lines.append(f"{role}: {content}")
 
         return "\n".join(context_lines)
+
+    async def get_last_query_analysis(self, session_id: str) -> Optional[dict]:
+        """
+        Get the most recent QueryAnalysis for follow-up handling.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            QueryAnalysis dict or None
+        """
+        db = await get_database()
+
+        # Find most recent message with query_analysis
+        cursor = db.messages_collection.find(
+            {
+                "session_id": session_id,
+                "query_analysis": {"$ne": None}
+            }
+        ).sort("timestamp", -1).limit(1)
+
+        messages = await cursor.to_list(length=1)
+
+        if messages and messages[0].get("query_analysis"):
+            return messages[0]["query_analysis"]
+
+        return None
 
     async def clear_session(self, session_id: str) -> int:
         """

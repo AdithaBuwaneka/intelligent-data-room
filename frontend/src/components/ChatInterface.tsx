@@ -3,9 +3,13 @@
  *
  * Main chat interface for interacting with the data analysis AI.
  * Handles message input, sending queries, and displaying responses.
+ *
+ * DYNAMIC SUGGESTIONS:
+ * Generates relevant sample prompts based on the uploaded file's columns.
+ * Updates automatically when a different file is uploaded.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Message, FileMetadata, QueryResponse } from '../types';
 import MessageList from './MessageList';
 
@@ -14,6 +18,64 @@ interface ChatInterfaceProps {
   onSendMessage: (content: string) => Promise<QueryResponse>;
   isLoading: boolean;
   fileUploaded: FileMetadata | null;
+}
+
+/**
+ * Generate dynamic sample prompts based on file columns.
+ * Creates relevant suggestions that match the actual data.
+ */
+function generateDynamicPrompts(columns: string[]): string[] {
+  if (!columns || columns.length === 0) {
+    return [
+      'How many rows are in this dataset?',
+      'What columns are available?',
+      'Show summary statistics',
+      'What is the data about?',
+    ];
+  }
+
+  const prompts: string[] = [];
+  const colLower = columns.map(c => c.toLowerCase());
+
+  // Find potential categorical columns (common patterns)
+  const categoryPatterns = ['category', 'type', 'region', 'state', 'country', 'segment', 'department', 'status', 'company', 'name'];
+  const numericPatterns = ['sales', 'profit', 'revenue', 'amount', 'price', 'quantity', 'count', 'total', 'cost'];
+  const datePatterns = ['date', 'year', 'month', 'time', 'period'];
+
+  // Find matching columns
+  const categoryCol = columns.find(c => categoryPatterns.some(p => c.toLowerCase().includes(p)));
+  const numericCol = columns.find(c => numericPatterns.some(p => c.toLowerCase().includes(p)));
+  const dateCol = columns.find(c => datePatterns.some(p => c.toLowerCase().includes(p)));
+
+  // Generate prompts based on found columns
+  if (numericCol && categoryCol) {
+    prompts.push(`Show total ${numericCol} by ${categoryCol}`);
+    prompts.push(`What are the top 5 ${categoryCol}s by ${numericCol}?`);
+  }
+
+  if (categoryCol) {
+    prompts.push(`Create a pie chart by ${categoryCol}`);
+  }
+
+  if (numericCol && dateCol) {
+    prompts.push(`How has ${numericCol} changed over time?`);
+  }
+
+  // Add generic prompts if we don't have enough
+  if (prompts.length < 2) {
+    prompts.push(`How many rows are in this dataset?`);
+  }
+
+  if (prompts.length < 3 && columns.length > 0) {
+    prompts.push(`Show distribution of ${columns[0]}`);
+  }
+
+  if (prompts.length < 4) {
+    prompts.push(`Show summary statistics`);
+  }
+
+  // Return up to 4 prompts
+  return prompts.slice(0, 4);
 }
 
 export function ChatInterface({
@@ -46,13 +108,52 @@ export function ChatInterface({
 
   const isDisabled = !fileUploaded || isLoading;
 
-  // Sample prompts for users
-  const samplePrompts = [
-    'Show total Sales by Category',
-    'What are the top 5 states by profit?',
-    'Create a pie chart of sales by region',
-    'How has profit changed over the years?',
-  ];
+  // DYNAMIC: Generate sample prompts based on file columns
+  // Updates automatically when different file is uploaded
+  const samplePrompts = useMemo(() => {
+    if (fileUploaded?.columns) {
+      return generateDynamicPrompts(fileUploaded.columns);
+    }
+    return [
+      'How many rows are in this dataset?',
+      'What columns are available?',
+      'Show summary statistics',
+      'What is the data about?',
+    ];
+  }, [fileUploaded?.columns]);
+
+  // FOLLOW-UP SUGGESTIONS: Generate based on last analysis
+  // Shows after a chart/analysis is displayed
+  const followUpSuggestions = useMemo(() => {
+    if (messages.length === 0) return [];
+
+    // Find last assistant message with chart
+    const lastAssistantMsg = [...messages].reverse().find(
+      m => m.role === 'assistant' && m.chartConfig
+    );
+
+    if (!lastAssistantMsg?.chartConfig) return [];
+
+    const suggestions: string[] = [];
+    const chartType = lastAssistantMsg.chartConfig.type;
+
+    // Suggest different chart types
+    if (chartType !== 'pie') {
+      suggestions.push('Show as pie chart');
+    }
+    if (chartType !== 'bar') {
+      suggestions.push('Show as bar chart');
+    }
+    if (chartType !== 'line') {
+      suggestions.push('Show as line chart');
+    }
+
+    // Suggest limit changes
+    suggestions.push('Top 10 instead');
+    suggestions.push('Show more');
+
+    return suggestions.slice(0, 4);
+  }, [messages]);
 
   const handleSamplePrompt = (prompt: string) => {
     if (!isDisabled) {
@@ -122,6 +223,25 @@ export function ChatInterface({
           <MessageList messages={messages} isLoading={isLoading} />
         )}
       </div>
+
+      {/* Follow-up Suggestions - shown after analysis */}
+      {followUpSuggestions.length > 0 && !isLoading && messages.length > 0 && (
+        <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
+          <p className="text-xs text-gray-500 mb-2">Quick follow-ups:</p>
+          <div className="flex flex-wrap gap-2">
+            {followUpSuggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => handleSamplePrompt(suggestion)}
+                disabled={isDisabled}
+                className="px-2.5 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors disabled:opacity-50"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="px-6 py-4 border-t border-gray-100">

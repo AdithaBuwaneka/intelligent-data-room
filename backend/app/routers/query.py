@@ -3,6 +3,13 @@ Query Router
 
 Handles chat queries using the multi-agent system (Planner + Executor).
 Includes intelligent query classification to handle greetings and casual chat.
+
+INTELLIGENT ANALYSIS (Gemini 2.5):
+- QueryAnalyzer validates queries BEFORE expensive processing
+- Filters meaningless queries ("pp", "test", "fdsf", "5")
+- Determines visualization needs intelligently
+- Extracts limit numbers (top 5, top 10)
+- Identifies correct columns for charts
 """
 
 import gc
@@ -17,6 +24,7 @@ from app.services.database import get_database
 from app.services.memory import get_memory_service
 from app.graph.workflow import AgentWorkflow
 from app.agents.classifier import get_classifier
+from app.agents.query_analyzer import get_query_analyzer
 
 router = APIRouter()
 
@@ -143,6 +151,94 @@ async def process_query(request: QueryRequest):
         df = await load_dataframe_from_url(request.file_url)
         print(f"📊 Data loaded: {len(df)} rows, {len(df.columns)} columns")
 
+        # Step 4.5: INTELLIGENT QUERY ANALYSIS (Gemini 2.5)
+        # Validates query and extracts parameters BEFORE expensive processing
+        query_analyzer = get_query_analyzer()
+
+        # Build schema for analysis
+        data_schema = {
+            "columns": df.columns.tolist(),
+            "sample_data": {col: str(df[col].dropna().iloc[0])[:50] if len(df[col].dropna()) > 0 else "N/A"
+                          for col in df.columns},
+            "row_count": len(df),
+        }
+
+        # Get previous analysis for follow-up handling
+        previous_analysis = await memory.get_last_query_analysis(request.session_id)
+
+        query_analysis = await query_analyzer.analyze(
+            question=request.question,
+            schema=data_schema,
+            context=context,
+        )
+
+        # FOLLOW-UP HANDLING: Merge previous analysis when needed
+        if query_analysis.is_follow_up and query_analysis.inherit_from_previous and previous_analysis:
+            print(f"🔄 Follow-up detected: {query_analysis.follow_up_type}")
+
+            # Inherit from previous analysis what wasn't specified
+            if not query_analysis.group_column and previous_analysis.get("group_column"):
+                query_analysis.group_column = previous_analysis["group_column"]
+            if not query_analysis.value_column and previous_analysis.get("value_column"):
+                query_analysis.value_column = previous_analysis["value_column"]
+            if not query_analysis.aggregation and previous_analysis.get("aggregation"):
+                query_analysis.aggregation = previous_analysis["aggregation"]
+
+            # For limit changes, keep other params
+            if query_analysis.follow_up_type == "limit_change":
+                if not query_analysis.chart_type and previous_analysis.get("chart_type"):
+                    query_analysis.chart_type = previous_analysis["chart_type"]
+                if previous_analysis.get("requires_visualization"):
+                    query_analysis.requires_visualization = True
+
+            # For chart type changes, keep the data params
+            if query_analysis.follow_up_type == "chart_type_change":
+                if not query_analysis.limit_number and previous_analysis.get("limit_number"):
+                    query_analysis.limit_number = previous_analysis["limit_number"]
+                query_analysis.requires_visualization = True
+
+            print(f"🔄 Merged analysis: group={query_analysis.group_column}, "
+                  f"value={query_analysis.value_column}, limit={query_analysis.limit_number}, "
+                  f"chart={query_analysis.chart_type}")
+
+        print(f"🧠 Query Analysis: meaningful={query_analysis.is_meaningful_query}, "
+              f"can_answer={query_analysis.can_be_answered}, "
+              f"viz={query_analysis.requires_visualization}, "
+              f"limit={query_analysis.limit_number}, "
+              f"follow_up={query_analysis.is_follow_up}")
+
+        # FILTER: If query is not meaningful, return early with helpful message
+        if not query_analysis.is_meaningful_query:
+            response_msg = query_analysis.suggested_response or (
+                "I couldn't understand your request. Please ask a clear question about your data, "
+                "like 'What are the top 5 products by sales?' or 'Show total revenue by region'."
+            )
+
+            # Save messages
+            await memory.save_message(
+                session_id=request.session_id,
+                role="user",
+                content=request.question,
+            )
+            await memory.save_message(
+                session_id=request.session_id,
+                role="assistant",
+                content=response_msg,
+                plan=None,
+                chart_config=None,
+            )
+
+            del df
+            gc.collect()
+
+            execution_time = time.time() - start_time
+            return QueryResponse(
+                answer=response_msg,
+                plan=None,
+                chart_config=None,
+                execution_time=execution_time,
+            )
+
         # Save user message
         await memory.save_message(
             session_id=request.session_id,
@@ -150,20 +246,22 @@ async def process_query(request: QueryRequest):
             content=request.question,
         )
 
-        # Run multi-agent workflow
+        # Run multi-agent workflow with analysis context
         result = await workflow.run(
             question=request.question,
             dataframe=df,
             context=context,
+            query_analysis=query_analysis,  # Pass analysis for intelligent decisions
         )
 
-        # Save assistant message
+        # Save assistant message with query analysis for follow-up handling
         await memory.save_message(
             session_id=request.session_id,
             role="assistant",
             content=result["answer"],
             plan=result["plan"],
             chart_config=result["chart_config"],
+            query_analysis=query_analysis.model_dump() if query_analysis else None,
         )
 
         # Clean up DataFrame from memory
