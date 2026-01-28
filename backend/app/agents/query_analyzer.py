@@ -80,6 +80,11 @@ class QueryAnalysis(BaseModel):
         default=False,
         description="True if should inherit columns/aggregation from previous analysis"
     )
+    # NEW: Filter values for filter_change follow-ups
+    filter_values: Optional[list[str]] = Field(
+        default=None,
+        description="List of values to filter by for filter_change follow-ups (e.g., ['Technology', 'Furniture'])"
+    )
 
 
 ANALYZER_SYSTEM_PROMPT = """You are an intelligent Query Analyzer for a Data Analysis system. Your job is to analyze user queries and return a structured JSON decision.
@@ -130,8 +135,11 @@ Analyze the user's query against the available data schema AND conversation cont
    - Set: is_follow_up=true, keep aggregation and limit, change column
 
 4. **Filter/Refinement** (follow_up_type: "filter_change")
-   - "only for 2021", "just the west region", "exclude returns"
+   - "only for 2021", "just the west region", "exclude returns", "show only technology and furniture"
    - Set: is_follow_up=true, inherit_from_previous=true
+   - **IMPORTANT:** Extract the filter values into filter_values array!
+   - Example: "Show only technology and furniture" → filter_values: ["Technology", "Furniture"]
+   - Example: "Just the west region" → filter_values: ["West"]
 
 ### When is_follow_up is TRUE:
 - Set inherit_from_previous=true to keep previous columns/aggregation
@@ -250,7 +258,8 @@ Return ONLY a valid JSON object, no other text:
   "suggested_response": "string" | null,
   "is_follow_up": boolean,
   "follow_up_type": "chart_type_change" | "limit_change" | "column_change" | "filter_change" | null,
-  "inherit_from_previous": boolean
+  "inherit_from_previous": boolean,
+  "filter_values": ["value1", "value2"] | null  // For filter_change: extract the values to filter by
 }
 """
 
