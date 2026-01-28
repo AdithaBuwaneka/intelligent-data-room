@@ -41,7 +41,7 @@ class QueryResponse(BaseModel):
     """Response from the multi-agent query system."""
 
     answer: str = Field(..., description="Generated answer to the question")
-    plan: str = Field(..., description="Execution plan created by Planner agent")
+    plan: Optional[str] = Field(None, description="Execution plan created by Planner agent")
     chart_config: Optional[ChartConfig] = Field(
         None, description="Chart configuration if visualization requested"
     )

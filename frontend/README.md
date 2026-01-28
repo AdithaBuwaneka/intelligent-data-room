@@ -1,34 +1,70 @@
-# Intelligent Data Room - Frontend
+# Frontend - Intelligent Data Room
 
-React + TypeScript + Vite frontend for the Intelligent Data Room application.
+React + TypeScript frontend for the AI-powered data analysis platform.
 
-## Setup
+## 🌐 Live Demo
+
+[intelligent-data-room.vercel.app](https://intelligent-data-room.vercel.app)
+
+## ✨ Features
+
+- Drag-and-drop file upload (CSV/XLSX)
+- Real-time chat interface
+- Interactive charts (Recharts)
+- Session history & switching
+- Mobile responsive design
+
+## 🚀 Quick Start
 
 ```bash
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-## Build
-
-```bash
-npm run build
-npm run preview
-```
-
-## Environment
-
-Create `.env` file:
+## 🔧 Environment Variables
 
 ```env
 VITE_API_URL=http://localhost:8000
 ```
 
-## Scripts
+For production (Vercel):
+```env
+VITE_API_URL=https://adithaf7-intelligent-data-room.hf.space
+```
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+## 📁 Structure
+
+```
+src/
+├── components/     # UI components
+│   ├── ChatInterface.tsx
+│   ├── FileUpload.tsx
+│   ├── MessageList.tsx
+│   └── ChartDisplay.tsx
+├── hooks/          # Custom React hooks
+│   ├── useChat.ts
+│   └── useFileUpload.ts
+├── types/          # TypeScript types
+└── App.tsx         # Main app
+```
+
+## 🛠️ Tech Stack
+
+- React 18 + TypeScript
+- Vite (build tool)
+- Tailwind CSS
+- Recharts (visualizations)
+
+## 📦 Build
+
+```bash
+npm run build     # Production build
+npm run preview   # Preview build
+```
+
+## 🚀 Deploy to Vercel
+
+```bash
+vercel
+```

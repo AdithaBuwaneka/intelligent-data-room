@@ -2,10 +2,10 @@
 Planner Agent
 
 Analyzes user questions and data schema to create step-by-step execution plans.
-Uses Google Gemini API for natural language understanding.
+Uses Google Gemini API (google-genai SDK) for natural language understanding.
 """
 
-import google.generativeai as genai
+from google import genai
 from typing import Optional
 
 from app.config import get_settings
@@ -14,10 +14,11 @@ from app.config import get_settings
 PLANNER_SYSTEM_PROMPT = """You are a Data Analysis Planner Agent. Your role is to analyze user questions about data and create clear, step-by-step execution plans.
 
 ## Your Responsibilities:
-1. Understand the user's question in the context of the available data
+1. Understand the user's question and TRUE INTENT
 2. Analyze the data schema (columns and their likely types)
 3. Consider any previous conversation context
 4. Create a precise execution plan that can be followed by an Executor Agent
+5. **Intelligently determine if visualization should be included**
 
 ## Output Format:
 Create a structured plan with these sections:
@@ -35,6 +36,40 @@ Create a structured plan with these sections:
 
 **OUTPUT FORMAT:** [Describe what the final answer should look like]
 
+## Intelligent Visualization Decision:
+
+**Understand the user's TRUE INTENT - don't just match keywords:**
+
+**User WANTS visualization when they:**
+- Use visual action words in ANY language: "chart", "plot", "graph", "visualize", "draw", "show me visually"
+- Ask for visual comparisons: "compare visually", "see the distribution", "display trends"
+- Want to see patterns: "show the pattern", "illustrate the relationship"
+- Any phrasing that implies wanting to SEE something visually
+
+**User DOES NOT want visualization when they:**
+- Use negative language: "don't", "without", "no need for", "skip the", "just calculate", "only numbers"
+- Ask for specific formats: "table only", "list format", "text results", "numbers only"
+- Focus purely on calculation: "calculate", "compute", "what is the number"
+- Any phrasing that indicates they want data without visuals
+
+**Smart Decision Making:**
+- If user mentions BOTH (e.g., "chart the sales but don't show visualization"):
+  → Understand the contradiction → Negative instruction takes priority → NO
+  
+- If unclear or ambiguous:
+  → Consider question type:
+    - Comparisons across categories → Often benefits from visualization
+    - Trends over time → Often benefits from visualization  
+    - Single values/counts → Usually doesn't need visualization
+    - Top N items → Could benefit from visualization
+  → Consider if user asked for it before in context
+  → Make intelligent decision
+
+- Focus on INTENT, not exact words:
+  - "I want to see sales by region" (even without "chart") → Could benefit from visual → YES
+  - "Give me the total sales number" → Just wants a number → NO
+  - "How does profit compare across categories" → Comparison suggests visual → YES (unless they said no)
+
 ## Guidelines:
 - Be specific about column names (use exact names from schema)
 - For aggregations, specify the function (sum, mean, count, etc.)
@@ -42,24 +77,34 @@ Create a structured plan with these sections:
 - For sorting, specify ascending/descending
 - If visualization is needed, be explicit about chart type and axes
 - Keep plans concise but complete
+- **Use semantic understanding to interpret user intent**
 
-## Example:
+## Examples:
+
+**Example 1:**
 Question: "What are the top 5 products by sales?"
-Schema: [Product Name, Sales, Category, Region]
+→ Intent: Get top products. Could benefit visually but not explicitly requested.
+→ Decision: YES (comparison across categories)
 
-**OBJECTIVE:** Find the 5 products with highest total sales
+**Example 2:**
+Question: "Calculate the Return Rate for each Region. Don't give any chart"
+→ Intent: Calculate rates BUT explicitly doesn't want visualization
+→ Decision: NO (negative instruction clear)
 
-**DATA COLUMNS NEEDED:** Product Name, Sales
+**Example 3:**  
+Question: "Show me how profit changed over the years"
+→ Intent: See changes/trends ("show me") 
+→ Decision: YES (temporal trend, visual helps)
 
-**STEPS:**
-1. Group data by 'Product Name'
-2. Calculate sum of 'Sales' for each product
-3. Sort by total sales in descending order
-4. Select top 5 rows
+**Example 4:**
+Question: "What's the total revenue?"
+→ Intent: Get single number
+→ Decision: NO (single value doesn't need chart)
 
-**VISUALIZATION:** YES - Horizontal bar chart with Product Name on Y-axis and Sales on X-axis
-
-**OUTPUT FORMAT:** Table showing Product Name and Total Sales for top 5 products
+**Example 5:**
+Question: "Calculate and chart Return Rate by Region, but I only need the table"
+→ Intent: Even though "chart" mentioned, "only need the table" overrides
+→ Decision: NO (negative instruction in context)
 """
 
 
@@ -78,13 +123,10 @@ class PlannerAgent:
     def __init__(self):
         """Initialize the Planner Agent with Google Gemini API."""
         settings = get_settings()
-        genai.configure(api_key=settings.gemini_api_key)
 
-        # Use Gemini 2.5 Flash for better reasoning and planning
-        self.model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=PLANNER_SYSTEM_PROMPT,
-        )
+        # Use the new google-genai SDK
+        self.client = genai.Client(api_key=settings.gemini_api_key)
+        self.model_name = "gemini-2.5-flash"  # Latest, most capable flash model
 
     async def create_plan(
         self,
@@ -103,8 +145,8 @@ class PlannerAgent:
         Returns:
             Step-by-step execution plan as a string
         """
-        # Build the prompt
-        prompt_parts = []
+        # Build the prompt with system instruction
+        prompt_parts = [PLANNER_SYSTEM_PROMPT, "\n---\n"]
 
         # Add context if available
         if context and context != "No previous conversation context.":
@@ -123,7 +165,12 @@ class PlannerAgent:
         full_prompt = "\n".join(prompt_parts)
 
         try:
-            response = await self.model.generate_content_async(full_prompt)
+            # Use the new SDK - note: using sync call in async context
+            # The new SDK handles this properly
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt
+            )
             plan = response.text.strip()
             return plan
 

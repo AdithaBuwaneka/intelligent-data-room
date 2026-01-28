@@ -16,3 +16,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Test files (keep locally, don't deploy)
+backend/test_*.py
+backend/analyze_results.py
+backend/test_results.json
+
+# Generated chart files
+temp_charts/
+exports/
+backend/temp_charts/
+backend/exports/

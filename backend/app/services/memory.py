@@ -121,10 +121,31 @@ class MemoryService:
         if not messages:
             return "No previous conversation context."
 
-        context_lines = ["Previous conversation:"]
+        # Check if there was data analysis in the conversation
+        has_data_analysis = any(
+            msg.get("plan") or msg.get("chart_config") 
+            for msg in messages
+        )
+
+        context_lines = []
+        
+        # Add a header indicating data analysis context
+        if has_data_analysis:
+            context_lines.append("[DATA ANALYSIS SESSION - Previous messages involved data queries]")
+        
+        context_lines.append("Previous conversation:")
+        
         for msg in messages:
             role = "User" if msg["role"] == "user" else "Assistant"
-            context_lines.append(f"{role}: {msg['content']}")
+            content = msg['content']
+            
+            # Add indicators for data analysis responses
+            if msg.get("plan"):
+                content += " [executed data analysis]"
+            if msg.get("chart_config"):
+                content += " [created chart]"
+            
+            context_lines.append(f"{role}: {content}")
 
         return "\n".join(context_lines)
 

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend (not needed in backend Docker)
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+
+# Backend artifacts
+backend/exports/
+backend/*.db
+backend/data/
+
+# Environment
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# Misc
+*.log
+test_*.py
+README.md

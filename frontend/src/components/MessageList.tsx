@@ -66,6 +66,30 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 }
 
 /**
+ * Filter out chart file paths from message content
+ * These paths (like temp_charts/xxx.png) should not be displayed in chat
+ */
+function filterChartPaths(content: string): string {
+  if (!content) return content;
+  
+  // Remove lines that are only chart file paths
+  const lines = content.split('\n');
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+    // Filter out lines that are just file paths to temp_charts or chart files
+    if (/^(temp_charts|charts|exports)?[\\\/]?[\w-]+\.(png|jpg|jpeg|svg)$/i.test(trimmed)) {
+      return false;
+    }
+    // Filter out empty lines if they're consecutive
+    return true;
+  });
+  
+  const result = filteredLines.join('\n').trim();
+  // If result is empty or just whitespace, return a single space to avoid rendering issues
+  return result || content;
+}
+
+/**
  * Individual message bubble component
  */
 function MessageBubble({ message }: { message: Message }) {
@@ -101,14 +125,16 @@ function MessageBubble({ message }: { message: Message }) {
                   : 'message-assistant'
               }
             >
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="whitespace-nowrap-for-short">{filterChartPaths(message.content)}</p>
             </div>
 
             {/* Execution plan (collapsible) */}
             {message.plan && <ExecutionPlan plan={message.plan} />}
 
-            {/* Chart display */}
-            {message.chartConfig && <ChartDisplay config={message.chartConfig} />}
+            {/* Chart display - only render if config has valid data */}
+            {message.chartConfig && message.chartConfig.data && message.chartConfig.data.length > 0 && (
+              <ChartDisplay config={message.chartConfig} />
+            )}
 
             {/* Timestamp */}
             <p className={`text-xs text-gray-400 ${isUser ? 'text-right' : 'text-left'}`}>
@@ -122,12 +148,90 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 /**
- * Collapsible execution plan display
+ * Collapsible execution plan display with improved formatting
  */
 function ExecutionPlan({ plan }: { plan: string }) {
+  // Parse the plan into formatted sections
+  const formatPlan = (text: string) => {
+    const lines = text.split('\n');
+    
+    return lines.map((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines
+      if (!trimmedLine) {
+        return <div key={index} className="h-2" />;
+      }
+      
+      // Bold headers (e.g., **OBJECTIVE:**)
+      if (trimmedLine.startsWith('**') && trimmedLine.includes(':**')) {
+        const headerMatch = trimmedLine.match(/^\*\*([^*]+)\*\*:?\s*(.*)/);
+        if (headerMatch) {
+          return (
+            <div key={index} className="mt-3 first:mt-0">
+              <span className="font-semibold text-blue-700">{headerMatch[1]}:</span>
+              {headerMatch[2] && <span className="ml-1">{headerMatch[2]}</span>}
+            </div>
+          );
+        }
+      }
+      
+      // Numbered steps (e.g., 1. Step description)
+      if (/^\d+\.\s/.test(trimmedLine)) {
+        const stepMatch = trimmedLine.match(/^(\d+)\.\s+(.+)/);
+        if (stepMatch) {
+          return (
+            <div key={index} className="flex gap-2 ml-2 mt-1">
+              <span className="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
+                {stepMatch[1]}
+              </span>
+              <span className="text-gray-700">{stepMatch[2]}</span>
+            </div>
+          );
+        }
+      }
+      
+      // Bullet points (e.g., - Item)
+      if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('• ')) {
+        return (
+          <div key={index} className="flex gap-2 ml-4 mt-1">
+            <span className="text-gray-400">•</span>
+            <span className="text-gray-600">{trimmedLine.slice(2)}</span>
+          </div>
+        );
+      }
+      
+      // YES/NO indicators
+      if (trimmedLine.includes('YES -') || trimmedLine.includes('YES–') || trimmedLine.toUpperCase().startsWith('YES')) {
+        return (
+          <div key={index} className="flex items-center gap-2 mt-1">
+            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">YES</span>
+            <span className="text-gray-600">{trimmedLine.replace(/^YES\s*[-–]?\s*/i, '')}</span>
+          </div>
+        );
+      }
+      
+      if (trimmedLine.toUpperCase().startsWith('NO') && !trimmedLine.toLowerCase().startsWith('no ')) {
+        return (
+          <div key={index} className="flex items-center gap-2 mt-1">
+            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded font-medium">NO</span>
+            <span className="text-gray-600">{trimmedLine.replace(/^NO\s*[-–]?\s*/i, '')}</span>
+          </div>
+        );
+      }
+      
+      // Regular text
+      return (
+        <div key={index} className="text-gray-700 mt-1">
+          {trimmedLine}
+        </div>
+      );
+    });
+  };
+
   return (
-    <details className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-      <summary className="px-3 py-2 text-xs font-medium text-gray-600 cursor-pointer hover:bg-gray-100 flex items-center gap-2">
+    <details className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 overflow-hidden">
+      <summary className="px-4 py-2.5 text-sm font-medium text-blue-700 cursor-pointer hover:bg-blue-100/50 flex items-center gap-2 transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
@@ -137,9 +241,10 @@ function ExecutionPlan({ plan }: { plan: string }) {
           />
         </svg>
         View Execution Plan
+        <span className="ml-auto text-xs text-blue-500">Click to expand</span>
       </summary>
-      <div className="px-3 py-2 text-xs text-gray-700 border-t border-gray-200 bg-white">
-        <pre className="whitespace-pre-wrap font-mono">{plan}</pre>
+      <div className="px-4 py-3 text-sm border-t border-blue-200 bg-white">
+        {formatPlan(plan)}
       </div>
     </details>
   );

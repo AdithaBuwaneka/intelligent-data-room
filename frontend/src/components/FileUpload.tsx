@@ -5,7 +5,7 @@
  * Validates file type and size (max 10MB).
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { FileMetadata } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -16,6 +16,7 @@ interface FileUploadProps {
   onUploadStart: () => void;
   onUploadEnd: () => void;
   onError: (error: string) => void;
+  initialFile?: FileMetadata | null;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -28,9 +29,15 @@ export function FileUpload({
   onUploadStart,
   onUploadEnd,
   onError,
+  initialFile = null,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<FileMetadata | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<FileMetadata | null>(initialFile);
+
+  // Sync uploadedFile state when initialFile prop changes (e.g., after async restoration)
+  useEffect(() => {
+    setUploadedFile(initialFile);
+  }, [initialFile]);
 
   const validateFile = (file: File): string | null => {
     // Check file extension

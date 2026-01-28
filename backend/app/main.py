@@ -27,10 +27,13 @@ async def lifespan(app: FastAPI):
     try:
         from app.services.database import get_database, close_database
         await get_database()
+        print("✅ Connected to MongoDB Atlas")
+        print("✅ Database indexes created")
         print("✅ Application started successfully")
     except Exception as e:
-        print(f"⚠️ Database connection failed: {e}")
-        print("⚠️ App will start but database features may not work")
+        print(f"❌ Database connection failed: {e}")
+        print("⚠️ App is running but database features may not work")
+        print("⚠️ Please check: MONGODB_URI env var and MongoDB Atlas connectivity")
 
     yield
 
