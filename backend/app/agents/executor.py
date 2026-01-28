@@ -544,9 +544,41 @@ Do NOT import any system modules. Only use: pandas, matplotlib.pyplot, numpy.
                 value_col = num_cols[0]
                 print(f"📊 No match found, using first numeric column: {value_col}")
 
+        # Apply filter_values if present (for filter_change follow-ups)
+        working_df = df
+        if hasattr(self, '_current_analysis') and self._current_analysis is not None:
+            analysis = self._current_analysis
+            if hasattr(analysis, 'filter_values') and analysis.filter_values:
+                filter_vals = analysis.filter_values
+                filter_col = group_col
+                
+                # Check if filter values match the group column
+                # If not, try to find the correct column
+                sample_val = filter_vals[0]
+                # Safe check: ensure column exists and has string representation
+                col_has_val = False
+                if group_col in df.columns:
+                     col_has_val = df[group_col].astype(str).str.contains(str(sample_val), case=False, regex=False).any()
+                
+                if not col_has_val:
+                    print(f"📊 Filter values {filter_vals} don't match group column {group_col}")
+                    # Search for the correct column in categorical columns
+                    for col in cat_cols:
+                        if df[col].astype(str).str.contains(str(sample_val), case=False, regex=False).any():
+                            filter_col = col
+                            print(f"📊 Found matching filter column: {filter_col}")
+                            break
+                
+                if filter_col:
+                    print(f"📊 Applying filter: {filter_col} in {filter_vals}")
+                    # Case-insensitive filtering
+                    mask = df[filter_col].astype(str).str.lower().isin([str(v).lower() for v in filter_vals])
+                    working_df = df[mask]
+                    print(f"📊 Filtered data: {len(working_df)} rows (from {len(df)})")
+
         # Generate aggregated data with correct parameters
         try:
-            grouped = df.groupby(group_col)[value_col]
+            grouped = working_df.groupby(group_col)[value_col]
 
             # Apply aggregation
             if aggregation == "mean":

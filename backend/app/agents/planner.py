@@ -191,6 +191,11 @@ class PlannerAgent:
         if is_follow_up:
             steps.append(f"{step_num}. This is a follow-up query ({follow_up_type}). Use parameters from previous analysis.")
             step_num += 1
+            
+            # Context-aware filtering for referential queries (e.g., "that region")
+            if hasattr(analysis, "filter_values") and analysis.filter_values:
+                 steps.append(f"{step_num}. CRITICAL: Filter data to ONLY include these specific values: {analysis.filter_values}")
+                 step_num += 1
 
         if group_col and value_col:
             steps.append(f"{step_num}. Group data by '{group_col}'")
