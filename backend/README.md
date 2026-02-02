@@ -42,3 +42,4 @@ Friendly Response
 1. **Classifier** - Detects greetings vs data questions
 2. **Planner** - Creates step-by-step execution plan
 3. **Executor** - Runs PandasAI code, generates charts
+# test 1770071548
